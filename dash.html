@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>커리어PT 생존일지</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #F5F4F0;
+  --surface: #FFFFFF;
+  --surface2: #EEECE7;
+  --border: rgba(0,0,0,0.07);
+  --border2: rgba(0,0,0,0.13);
+  --text: #18181A;
+  --text2: #5C5C61;
+  --text3: #A0A0A8;
+  --green: #16A773;
+  --green-bg: #E8F8F2;
+  --green-dark: #0D7A54;
+  --amber: #C47C14;
+  --amber-bg: #FEF3DC;
+  --red: #D44B4A;
+  --red-bg: #FDEAEA;
+  --blue: #3070D4;
+  --r: 12px;
+  --r-lg: 18px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.logo {
+  width: 30px; height: 30px;
+  background: var(--green);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.header-title { font-size: 15px; font-weight: 700; }
+.header-title small { font-size: 12px; font-weight: 500; color: var(--text3); margin-left: 4px; }
+.today-badge {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+}
+.container { max-width: 660px; margin: 0 auto; padding: 18px 14px 80px; }
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--surface2);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.tab {
+  flex: 1;
+  padding: 9px 4px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .15s;
+}
+.tab.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+}
+.panel { display: none; }
+.panel.active { display: block; }
+.card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 18px 18px 20px;
+  margin-bottom: 12px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+}
+.card-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.ig { background: var(--green-bg); }
+.ia { background: var(--amber-bg); }
+.ib { background: #EBF2FE; }
+.card-title { font-size: 14px; font-weight: 700; flex: 1; }
+.card-sub { font-size: 12px; color: var(--text3); }
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media(max-width:440px){ .input-grid { grid-template-columns: 1fr; } }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+.hint { font-weight: 400; color: var(--text3); }
+.field input[type=number] {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s, background .15s;
+  -moz-appearance: textfield;
+}
+.field input[type=number]::-webkit-outer-spin-button,
+.field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+.field input[type=number]:focus { border-color: var(--green); background: #fff; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+.fa-group { display: flex; gap: 8px; }
+.fa-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--border2);
+  background: var(--bg);
+  font-family: inherit;
+  font-size: 14px; font-weight: 700;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+.fa-btn.on  { background: var(--green-bg); color: var(--green-dark); border-color: var(--green); }
+.fa-btn.off-sel { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+.save-btn {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px;
+  border: none;
+  border-radius: var(--r);
+  background: var(--green);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s, opacity .15s;
+}
+.save-btn:hover { background: var(--green-dark); }
+.save-btn:active { transform: scale(.985); }
+.save-btn:disabled { opacity: .55; cursor: not-allowed; }
+.save-msg { text-align: center; font-size: 13px; font-weight: 500; margin-top: 10px; min-height: 20px; }
+.streak-banner {
+  background: var(--amber-bg);
+  border: 1px solid rgba(196,124,20,.18);
+  border-radius: var(--r);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px; font-weight: 600; color: var(--amber);
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+@media(max-width:380px){ .kpi-grid { grid-template-columns: 1fr 1fr; } }
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+}
+.kpi-label { font-size: 11px; font-weight: 600; color: var(--text3); margin-bottom: 6px; letter-spacing: .01em; }
+.kpi-val { font-size: 26px; font-weight: 700; line-height: 1; }
+.kpi-unit { font-size: 13px; font-weight: 500; color: var(--text3); margin-left: 2px; }
+.kpi-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.rate-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rate-row:last-child { border-bottom: none; }
+.rate-label { font-size: 13px; font-weight: 600; color: var(--text2); width: 68px; flex-shrink: 0; }
+.rate-track { flex: 1; height: 7px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.rate-fill { height: 7px; border-radius: 99px; background: var(--green); transition: width .5s ease; }
+.rate-fill.mid { background: var(--amber); }
+.rate-fill.low { background: var(--red); }
+.rate-pct { font-size: 13px; font-weight: 700; color: var(--text); width: 38px; text-align: right; }
+.time-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.time-row:last-child { border-bottom: none; }
+.time-label { font-size: 13px; color: var(--text2); width: 84px; flex-shrink: 0; }
+.time-track { flex: 1; height: 7px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.time-fill { height: 7px; border-radius: 99px; background: var(--blue); opacity: .7; }
+.time-val { font-size: 13px; font-weight: 700; color: var(--text); width: 42px; text-align: right; }
+.pill-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.pill {
+  padding: 5px 12px; border-radius: 99px;
+  font-family: inherit; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s; border: 1.5px solid transparent;
+}
+.chart-wrap { position: relative; width: 100%; height: 240px; }
+.legend-wrap { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.log-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: 8px;
+  align-items: start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.log-row:last-child { border-bottom: none; }
+.log-date { font-size: 12px; font-weight: 600; color: var(--text3); padding-top: 2px; }
+.log-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip {
+  background: var(--surface2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+}
+.chip b { font-weight: 700; color: var(--text); }
+.chip.hi { background: var(--green-bg); color: var(--green-dark); }
+.fa-tag {
+  padding: 3px 9px; border-radius: 6px;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.fa-o { background: var(--green-bg); color: var(--green-dark); }
+.fa-x { background: var(--red-bg); color: var(--red); }
+.fa-na { background: var(--surface2); color: var(--text3); }
+.empty-state { text-align: center; padding: 36px 16px; color: var(--text3); }
+.empty-icon { font-size: 30px; margin-bottom: 10px; }
+.empty-title { font-size: 15px; font-weight: 700; color: var(--text2); margin-bottom: 4px; }
+.empty-desc { font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📋</div>
+    <div class="header-title">생존일지 <small>커리어PT</small></div>
+  </div>
+  <div class="today-badge" id="today-badge"></div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" data-tab="input">오늘 입력</button>
+    <button class="tab" data-tab="summary">누적 요약</button>
+    <button class="tab" data-tab="trend">추이</button>
+    <button class="tab" data-tab="log">기록</button>
+  </div>
+
+  <!-- 입력 -->
+  <div class="panel active" id="panel-input">
+    <div id="streak-area"></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ig">⏱</div>
+        <div class="card-title">루틴 실행 시간</div>
+        <div class="card-sub">단위: 분</div>
+      </div>
+      <div class="section-label">매일 루틴</div>
+      <div class="input-grid" style="margin-bottom:10px">
+        <div class="field">
+          <label>매십경 <span class="hint">목표 10분</span></label>
+          <input type="number" id="f-gyeong" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>매십면 <span class="hint">목표 10분</span></label>
+          <input type="number" id="f-myeon" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>매십독 <span class="hint">목표 10분</span></label>
+          <input type="number" id="f-dok" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-label">취준 활동</div>
+      <div class="input-grid">
+        <div class="field">
+          <label>자소서 시청</label>
+          <input type="number" id="f-watch" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>자소서 작성</label>
+          <input type="number" id="f-write" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>기업분석</label>
+          <input type="number" id="f-company" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>필기 / 인적성</label>
+          <input type="number" id="f-exam" min="0" placeholder="0">
+        </div>
+        <div class="field">
+          <label>지원 <span class="hint">개수</span></label>
+          <input type="number" id="f-apply" min="0" placeholder="0">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-label">오늘의 상태</div>
+      <div class="input-grid">
+        <div class="field">
+          <label>자존감 점수 <span class="hint">1~5</span></label>
+          <input type="number" id="f-esteem" min="1" max="5" placeholder="3">
+        </div>
+        <div class="field">
+          <label>취업 확률 <span class="hint">%</span></label>
+          <input type="number" id="f-prob" min="0" max="100" placeholder="50">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ia">🏃</div>
+        <div class="card-title">FA5050 현장방문</div>
+      </div>
+      <div class="fa-group">
+        <button class="fa-btn" id="fa-yes">✓ 했어요</button>
+        <button class="fa-btn" id="fa-no">✗ 못 했어요</button>
+      </div>
+    </div>
+
+    <button class="save-btn" id="save-btn">오늘 기록 저장하기</button>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+
+  <!-- 요약 -->
+  <div class="panel" id="panel-summary">
+    <div class="kpi-grid" id="kpi-grid"></div>
+    <div class="card" id="card-rates" style="display:none">
+      <div class="card-header">
+        <div class="card-icon ig">✅</div>
+        <div class="card-title">루틴 달성률</div>
+        <div class="card-sub" id="sub-days"></div>
+      </div>
+      <div id="rates-body"></div>
+    </div>
+    <div class="card" id="card-times" style="display:none">
+      <div class="card-header">
+        <div class="card-icon ib">📚</div>
+        <div class="card-title">평균 활동 시간</div>
+        <div class="card-sub">일 평균</div>
+      </div>
+      <div id="times-body"></div>
+    </div>
+  </div>
+
+  <!-- 추이 -->
+  <div class="panel" id="panel-trend">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ib">📈</div>
+        <div class="card-title">항목별 시간 추이</div>
+      </div>
+      <div class="pill-group" id="pill-group"></div>
+      <div class="chart-wrap">
+        <canvas id="trend-canvas" role="img" aria-label="생존일지 항목별 시간 추이 차트">일별 활동 시간 추이</canvas>
+      </div>
+      <div class="legend-wrap" id="trend-legend"></div>
+    </div>
+  </div>
+
+  <!-- 기록 -->
+  <div class="panel" id="panel-log">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ig">🗂</div>
+        <div class="card-title">전체 기록</div>
+        <div class="card-sub" id="log-count"></div>
+      </div>
+      <div id="log-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE = 'saengjon_v2';
+let faVal = null, chartInst = null;
+let activeMetrics = ['gyeong','myeon','write','company'];
+
+const METRICS = [
+  {k:'gyeong', label:'매십경',     color:'#16A773'},
+  {k:'myeon',  label:'매십면',     color:'#3070D4'},
+  {k:'dok',    label:'매십독',     color:'#C47C14'},
+  {k:'watch',  label:'자소서 시청', color:'#7C5CCC'},
+  {k:'write',  label:'자소서 작성', color:'#D85A30'},
+  {k:'company',label:'기업분석',   color:'#C44484'},
+  {k:'exam',   label:'필기/인적성', color:'#5C5C61'},
+];
+
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function loadData(){ try{ return JSON.parse(localStorage.getItem(STORE)||'[]'); }catch(e){ return []; } }
+function saveData(d){ localStorage.setItem(STORE, JSON.stringify(d)); }
+function gv(id){ return +document.getElementById(id).value||0; }
+
+function setFA(v){
+  faVal = v;
+  document.getElementById('fa-yes').className = 'fa-btn'+(v===true?' on':'');
+  document.getElementById('fa-no').className  = 'fa-btn'+(v===false?' off-sel':'');
+}
+
+async function saveToday(){
+  const today = todayStr();
+  const entry = {
+    date:today, gyeong:gv('f-gyeong'), myeon:gv('f-myeon'), dok:gv('f-dok'),
+    watch:gv('f-watch'), write:gv('f-write'), company:gv('f-company'),
+    exam:gv('f-exam'), apply:gv('f-apply'), esteem:gv('f-esteem'), prob:gv('f-prob'), fa:faVal
+  };
+  const msg = document.getElementById('save-msg');
+  const btn = document.getElementById('save-btn');
+  msg.textContent='저장 중...'; msg.style.color='var(--text3)'; btn.disabled=true;
+
+  const data = loadData();
+  const idx = data.findIndex(r=>r.date===today);
+  if(idx>=0) data[idx]=entry; else data.push(entry);
+  data.sort((a,b)=>a.date.localeCompare(b.date));
+  saveData(data);
+
+  try {
+    const faStr = entry.fa===true?'O':entry.fa===false?'X':null;
+    const prompt = `Notion MCP를 사용해서 다음 데이터를 커리어PT 생존일지 데이터베이스(collection://55c2cd73-c12c-45e7-bbb9-58683a2fb6cf)에 한 행으로 추가해줘.
+properties:
+- Name: "${today} 생존일지"
+- date:날짜:start: "${today}"
+- date:날짜:is_datetime: 0
+- 매십경: ${entry.gyeong}
+- 매십면: ${entry.myeon}
+- 매십독: ${entry.dok}
+- 자소서 시청: ${entry.watch}
+- 자소서 작성: ${entry.write}
+- 기업분석: ${entry.company}
+- 필기인적성: ${entry.exam}
+- 지원개수: ${entry.apply}
+- 자존감점수: ${entry.esteem}
+- 취업확률: ${entry.prob}
+${faStr?`- FA5050: "${faStr}"`:''}`;
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        mcp_servers:[{type:'url',url:'https://mcp.notion.com/mcp',name:'notion-mcp'}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    const json = await res.json();
+    const ok = json.content&&json.content.some(b=>b.type==='mcp_tool_use'||b.type==='text');
+    msg.textContent = ok ? '저장 완료! Notion에도 기록됐어 ✓' : '로컬 저장 완료 (Notion 연동 실패)';
+    msg.style.color = ok ? 'var(--green)' : 'var(--amber)';
+  } catch(e) {
+    msg.textContent='로컬에 저장했어. Notion 연동을 확인해봐.';
+    msg.style.color='var(--amber)';
+  }
+  btn.disabled=false;
+  setTimeout(()=>{ msg.textContent=''; },3500);
+  renderStreak();
+}
+
+function calcStreak(){
+  const data=loadData(); if(!data.length) return 0;
+  const sorted=[...data].sort((a,b)=>b.date.localeCompare(a.date));
+  let streak=0, cur=new Date(); cur.setHours(0,0,0,0);
+  for(const r of sorted){
+    const d=new Date(r.date); d.setHours(0,0,0,0);
+    const diff=Math.round((cur-d)/864e5);
+    if(diff===0||diff===1){ if(r.gyeong>0||r.myeon>0||r.write>0) streak++; cur=d; } else break;
+  }
+  return streak;
+}
+
+function renderStreak(){
+  const s=calcStreak();
+  document.getElementById('streak-area').innerHTML = s>=2
+    ? `<div class="streak-banner">🔥 ${s}일 연속 기록 중! 이 흐름 유지해봐</div>` : '';
+}
+
+function switchTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.className='panel');
+  document.getElementById('panel-'+name).className='panel active';
+  document.querySelectorAll('.tab').forEach(t=>{ t.className='tab'+(t.dataset.tab===name?' active':''); });
+  if(name==='summary') renderSummary();
+  if(name==='trend')   renderTrend();
+  if(name==='log')     renderLog();
+}
+
+function renderSummary(){
+  const data=loadData();
+  const kg=document.getElementById('kpi-grid');
+  const cr=document.getElementById('card-rates');
+  const ct=document.getElementById('card-times');
+  if(!data.length){
+    kg.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📊</div><div class="empty-title">기록 없음</div><div class="empty-desc">오늘 입력 탭에서 첫 기록을 남겨봐!</div></div>`;
+    cr.style.display='none'; ct.style.display='none'; return;
+  }
+  const n=data.length;
+  const sum=k=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const avg=k=>Math.round(sum(k)/n);
+  const pct=(a,b)=>Math.round(a/b*100);
+  const gD=data.filter(r=>r.gyeong>=10).length;
+  const mD=data.filter(r=>r.myeon>=10).length;
+  const dD=data.filter(r=>r.dok>=10).length;
+  const fD=data.filter(r=>r.fa===true).length;
+  const aE=(sum('esteem')/n).toFixed(1);
+  const aP=Math.round(sum('prob')/n);
+
+  kg.innerHTML=`
+    <div class="kpi"><div class="kpi-label">기록 일수</div><div class="kpi-val">${n}<span class="kpi-unit">일</span></div></div>
+    <div class="kpi"><div class="kpi-label">총 지원</div><div class="kpi-val">${sum('apply')}<span class="kpi-unit">개</span></div></div>
+    <div class="kpi"><div class="kpi-label">FA5050</div><div class="kpi-val">${fD}<span class="kpi-unit">일</span></div></div>
+    <div class="kpi"><div class="kpi-label">매십경 달성</div><div class="kpi-val">${pct(gD,n)}<span class="kpi-unit">%</span></div><div class="kpi-sub">${gD}/${n}일</div></div>
+    <div class="kpi"><div class="kpi-label">매십면 달성</div><div class="kpi-val">${pct(mD,n)}<span class="kpi-unit">%</span></div><div class="kpi-sub">${mD}/${n}일</div></div>
+    <div class="kpi"><div class="kpi-label">평균 자존감</div><div class="kpi-val">${aE}<span class="kpi-unit">/5</span></div><div class="kpi-sub">취업확률 ${aP}%</div></div>
+  `;
+  cr.style.display='block';
+  document.getElementById('sub-days').textContent=`${n}일 기준`;
+  const rates=[
+    {label:'매십경',v:pct(gD,n)},{label:'매십면',v:pct(mD,n)},
+    {label:'매십독',v:pct(dD,n)},{label:'FA5050',v:pct(fD,n)},
+  ];
+  document.getElementById('rates-body').innerHTML=rates.map(r=>{
+    const cls=r.v>=70?'':r.v>=40?'mid':'low';
+    return `<div class="rate-row"><span class="rate-label">${r.label}</span><div class="rate-track"><div class="rate-fill ${cls}" style="width:${r.v}%"></div></div><span class="rate-pct">${r.v}%</span></div>`;
+  }).join('');
+
+  ct.style.display='block';
+  const times=[
+    {label:'매십경',k:'gyeong',max:30},{label:'매십면',k:'myeon',max:30},{label:'매십독',k:'dok',max:30},
+    {label:'자소서 시청',k:'watch',max:60},{label:'자소서 작성',k:'write',max:60},
+    {label:'기업분석',k:'company',max:60},{label:'필기/인적성',k:'exam',max:60},
+  ];
+  document.getElementById('times-body').innerHTML=times.map(t=>{
+    const v=avg(t.k); const w=Math.min(100,Math.round(v/t.max*100));
+    return `<div class="time-row"><span class="time-label">${t.label}</span><div class="time-track"><div class="time-fill" style="width:${w}%"></div></div><span class="time-val">${v}분</span></div>`;
+  }).join('');
+}
+
+function renderTrend(){
+  const data=loadData();
+  const pg=document.getElementById('pill-group');
+  pg.innerHTML=METRICS.map(m=>{
+    const on=activeMetrics.includes(m.k);
+    return `<button class="pill" data-k="${m.k}" style="border-color:${m.color};background:${on?m.color:'transparent'};color:${on?'#fff':m.color}">${m.label}</button>`;
+  }).join('');
+  pg.querySelectorAll('.pill').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const k=btn.dataset.k;
+      activeMetrics=activeMetrics.includes(k)?activeMetrics.filter(x=>x!==k):[...activeMetrics,k];
+      renderTrend();
+    });
+  });
+  if(!data.length){
+    document.getElementById('trend-canvas').parentElement.innerHTML=`<div class="empty-state"><div class="empty-icon">📈</div><div class="empty-title">기록 없음</div><div class="empty-desc">기록이 쌓이면 추이를 볼 수 있어!</div></div>`;
+    return;
+  }
+  const labels=data.map(r=>r.date.slice(5));
+  const datasets=METRICS.filter(m=>activeMetrics.includes(m.k)).map(m=>({
+    label:m.label, data:data.map(r=>r[m.k]||0),
+    borderColor:m.color, backgroundColor:m.color+'18',
+    tension:.35, fill:false, borderWidth:2, pointRadius:3, pointHoverRadius:5
+  }));
+  document.getElementById('trend-legend').innerHTML=METRICS.filter(m=>activeMetrics.includes(m.k))
+    .map(m=>`<span class="legend-item"><span class="legend-dot" style="background:${m.color}"></span>${m.label}</span>`).join('');
+  if(chartInst) chartInst.destroy();
+  chartInst=new Chart(document.getElementById('trend-canvas'),{
+    type:'line', data:{labels,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:11},maxRotation:45,autoSkip:true},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'},beginAtZero:true,title:{display:true,text:'분',font:{size:11}}}
+      }
+    }
+  });
+}
+
+function renderLog(){
+  const data=[...loadData()].reverse();
+  const body=document.getElementById('log-body');
+  document.getElementById('log-count').textContent=`총 ${data.length}일`;
+  if(!data.length){
+    body.innerHTML=`<div class="empty-state"><div class="empty-icon">🗂</div><div class="empty-title">기록 없음</div></div>`;
+    return;
+  }
+  body.innerHTML=data.map(r=>{
+    const chips=[
+      r.gyeong>0?`<span class="chip${r.gyeong>=10?' hi':''}">매십경 <b>${r.gyeong}분</b></span>`:'',
+      r.myeon>0 ?`<span class="chip${r.myeon>=10?' hi':''}">매십면 <b>${r.myeon}분</b></span>`:'',
+      r.dok>0   ?`<span class="chip">매십독 <b>${r.dok}분</b></span>`:'',
+      r.write>0 ?`<span class="chip">작성 <b>${r.write}분</b></span>`:'',
+      r.apply>0 ?`<span class="chip hi">지원 <b>${r.apply}개</b></span>`:'',
+    ].filter(Boolean).join('');
+    const fc=r.fa===true?'fa-o':r.fa===false?'fa-x':'fa-na';
+    const ft=r.fa===true?'FA O':r.fa===false?'FA X':'—';
+    return `<div class="log-row"><span class="log-date">${r.date.slice(5)}</span><div class="log-chips">${chips||'<span class="chip">입력 없음</span>'}</div><span class="fa-tag ${fc}">${ft}</span></div>`;
+  }).join('');
+}
+
+document.getElementById('today-badge').textContent=todayStr();
+renderStreak();
+document.getElementById('fa-yes').addEventListener('click',()=>setFA(true));
+document.getElementById('fa-no').addEventListener('click',()=>setFA(false));
+document.getElementById('save-btn').addEventListener('click',saveToday);
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+});
+</script>
+</body>
+</html>
