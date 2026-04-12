@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>커리어PT 생존일지</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1a1a18;
+    --text2: #6b6b64;
+    --text3: #9e9e96;
+    --green: #1a9e75;
+    --green-light: #e1f5ee;
+    --green-dark: #0f6e52;
+    --blue: #2f7fd4;
+    --blue-light: #e6f1fb;
+    --amber: #c47c14;
+    --amber-light: #faeeda;
+    --red: #d44b4a;
+    --red-light: #fcebeb;
+    --coral: #d85a30;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--text);
+  }
+  .header-title span {
+    color: var(--green);
+  }
+  .header-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  /* Layout */
+  .container {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem;
+  }
+
+  /* Tab nav */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1.5rem;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 4px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Input form */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 1.1rem;
+  }
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media(max-width:480px){.input-grid{grid-template-columns:1fr;}}
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: .02em;
+  }
+  .field input {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field input:focus { border-color: var(--green); }
+
+  /* Toggle */
+  .toggle-wrap { display: flex; gap: 8px; margin-top: 4px; }
+  .toggle-btn {
+    padding: 7px 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .toggle-btn.on { background: var(--green); color: #fff; border-color: var(--green); }
+  .toggle-btn.off { background: var(--red-light); color: var(--red); border-color: var(--red); }
+
+  /* Save button */
+  .save-btn {
+    width: 100%;
+    margin-top: 1.25rem;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--green);
+    color: #fff;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    letter-spacing: -.01em;
+  }
+  .save-btn:hover { background: var(--green-dark); }
+  .save-btn:active { transform: scale(.98); }
+  .save-msg {
+    text-align: center;
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+    margin-top: 8px;
+    height: 18px;
+  }
+
+  /* Metric grid */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  @media(max-width:480px){.metric-grid{grid-template-columns:1fr 1fr;}}
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.1rem;
+  }
+  .metric-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 500;
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+  .metric-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+  .metric-unit {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: 'Noto Sans KR', sans-serif;
+    margin-left: 2px;
+  }
+
+  /* Progress bars */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .progress-label {
+    font-size: 12px;
+    color: var(--text2);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 6px;
+    border-radius: 99px;
+    background: var(--green);
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-fill.warn { background: var(--amber); }
+  .bar-fill.low { background: var(--red); }
+  .progress-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text2);
+    width: 40px;
+    text-align: right;
+  }
+
+  /* Recent list */
+  .recent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    gap: 8px;
+  }
+  .recent-row:last-child { border-bottom: none; }
+  .recent-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    width: 68px;
+    flex-shrink: 0;
+  }
+  .recent-info { flex: 1; color: var(--text2); }
+  .recent-info b { color: var(--text); font-weight: 700; }
+  .badge {
+    padding: 2px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .badge-o { background: var(--green-light); color: var(--green-dark); }
+  .badge-x { background: var(--red-light); color: var(--red); }
+  .badge-na { background: var(--surface2); color: var(--text3); }
+
+  /* Chart */
+  .chart-outer { position: relative; width: 100%; height: 260px; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text3);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .empty strong { display: block; font-size: 16px; color: var(--text2); margin-bottom: 6px; }
+
+  /* Streak */
+  .streak-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--amber-light);
+    color: var(--amber);
+    border-radius: 99px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">커리어PT <span>생존일지</span></div>
+  <div class="header-date" id="today-str"></div>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" data-tab="input">오늘 입력</button>
+    <button class="tab" data-tab="summary">누적 요약</button>
+    <button class="tab" data-tab="trend">추이 차트</button>
+    <button class="tab" data-tab="log">기록 보기</button>
+  </div>
+
+  <!-- 입력 패널 -->
+  <div class="panel active" id="panel-input">
+    <div id="streak-area"></div>
+    <div class="card">
+      <div class="card-title">루틴 (분 단위)</div>
+      <div class="input-grid">
+        <div class="field"><label>매십경 (목표 10분)</label><input type="number" id="f-gyeong" min="0" placeholder="0"></div>
+        <div class="field"><label>매십면 (목표 10분)</label><input type="number" id="f-myeon" min="0" placeholder="0"></div>
+        <div class="field"><label>매십독 (목표 10분)</label><input type="number" id="f-dok" min="0" placeholder="0"></div>
+        <div class="field"><label>자소서 시청</label><input type="number" id="f-watch" min="0" placeholder="0"></div>
+        <div class="field"><label>자소서 작성</label><input type="number" id="f-write" min="0" placeholder="0"></div>
+        <div class="field"><label>기업분석</label><input type="number" id="f-company" min="0" placeholder="0"></div>
+        <div class="field"><label>필기/인적성</label><input type="number" id="f-exam" min="0" placeholder="0"></div>
+        <div class="field"><label>지원 개수</label><input type="number" id="f-apply" min="0" placeholder="0"></div>
+        <div class="field"><label>자존감 점수 (1~5)</label><input type="number" id="f-esteem" min="1" max="5" placeholder="3"></div>
+        <div class="field"><label>취업 확률 (%)</label><input type="number" id="f-prob" min="0" max="100" placeholder="50"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">FA5050 활동 여부</div>
+      <div class="toggle-wrap">
+        <button class="toggle-btn" id="fa-yes">O 했음</button>
+        <button class="toggle-btn" id="fa-no">X 안 했음</button>
+      </div>
+    </div>
+    <button class="save-btn" id="save-btn">오늘 기록 저장</button>
+    <div class="save-msg" id="save-msg"></div>
+  </div>
+
+  <!-- 요약 패널 -->
+  <div class="panel" id="panel-summary">
+    <div class="metric-grid" id="metric-grid"></div>
+    <div class="card">
+      <div class="card-title">평균 활동 시간 (일 평균)</div>
+      <div id="bars-area"></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title">달성률 요약</div>
+      <div id="rate-area"></div>
+    </div>
+  </div>
+
+  <!-- 추이 패널 -->
+  <div class="panel" id="panel-trend">
+    <div class="card">
+      <div class="card-title">항목별 시간 추이</div>
+      <div id="chart-select" style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap"></div>
+      <div class="chart-outer"><canvas id="trend-canvas" role="img" aria-label="생존일지 추이 차트">일별 활동 시간 추이</canvas></div>
+      <div class="legend-row" id="trend-legend"></div>
+    </div>
+  </div>
+
+  <!-- 로그 패널 -->
+  <div class="panel" id="panel-log">
+    <div class="card">
+      <div class="card-title">전체 기록</div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORE = 'saengjon_v2';
+let faVal = null;
+let chartInst = null;
+let activeMetrics = ['gyeong','myeon','write','company'];
+
+function todayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+}
+
+function loadData(){ try{ return JSON.parse(localStorage.getItem(STORE)||'[]'); }catch(e){ return []; } }
+function saveData(d){ localStorage.setItem(STORE, JSON.stringify(d)); }
+
+function setFA(v){
+  faVal = v;
+  document.getElementById('fa-yes').className='toggle-btn'+(v===true?' on':'');
+  document.getElementById('fa-no').className='toggle-btn'+(v===false?' off':'');
+}
+
+function saveToday(){
+  const data=loadData();
+  const today=todayStr();
+  const g=id=>+document.getElementById(id).value||0;
+  const entry={
+    date:today,
+    gyeong:g('f-gyeong'), myeon:g('f-myeon'), dok:g('f-dok'),
+    watch:g('f-watch'), write:g('f-write'), company:g('f-company'),
+    exam:g('f-exam'), apply:g('f-apply'),
+    esteem:g('f-esteem'), prob:g('f-prob'), fa:faVal
+  };
+  const idx=data.findIndex(r=>r.date===today);
+  if(idx>=0) data[idx]=entry; else data.push(entry);
+  data.sort((a,b)=>a.date.localeCompare(b.date));
+  saveData(data);
+  const msg=document.getElementById('save-msg');
+  msg.textContent='저장 완료! ('+today+')';
+  setTimeout(()=>msg.textContent='',2500);
+  renderStreak();
+}
+
+// 연속 달성 계산
+function calcStreak(){
+  const data=loadData();
+  if(!data.length) return 0;
+  const sorted=[...data].sort((a,b)=>b.date.localeCompare(a.date));
+  let streak=0;
+  let cur=new Date(); cur.setHours(0,0,0,0);
+  for(const r of sorted){
+    const d=new Date(r.date); d.setHours(0,0,0,0);
+    const diff=Math.round((cur-d)/(1000*60*60*24));
+    if(diff===0||diff===1){
+      if(r.gyeong>0||r.myeon>0||r.write>0) streak++;
+      cur=d;
+    } else break;
+  }
+  return streak;
+}
+
+function renderStreak(){
+  const s=calcStreak();
+  const area=document.getElementById('streak-area');
+  if(s>=2){
+    area.innerHTML=`<div class="streak-pill">🔥 ${s}일 연속 기록 중!</div>`;
+  } else area.innerHTML='';
+}
+
+function switchTab(name){
+  document.querySelectorAll('.panel').forEach(p=>p.className='panel');
+  document.getElementById('panel-'+name).className='panel active';
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.className='tab'+(['input','summary','trend','log'][i]===name?' active':'');
+  });
+  if(name==='summary') renderSummary();
+  if(name==='trend') renderTrend();
+  if(name==='log') renderLog();
+}
+
+function renderSummary(){
+  const data=loadData();
+  const mg=document.getElementById('metric-grid');
+  const ba=document.getElementById('bars-area');
+  const ra=document.getElementById('rate-area');
+  if(!data.length){
+    mg.innerHTML='<div class="empty" style="grid-column:1/-1"><strong>기록 없음</strong>오늘 입력 탭에서 첫 기록을 남겨봐!</div>';
+    ba.innerHTML=''; ra.innerHTML=''; return;
+  }
+  const n=data.length;
+  const sum=k=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const avg=k=>Math.round(sum(k)/n);
+  const pct=(a,b)=>Math.round(a/b*100);
+
+  const gyeongDays=data.filter(r=>r.gyeong>=10).length;
+  const myeonDays=data.filter(r=>r.myeon>=10).length;
+  const dokDays=data.filter(r=>r.dok>=10).length;
+  const faDays=data.filter(r=>r.fa===true).length;
+  const avgEst=(sum('esteem')/n).toFixed(1);
+
+  mg.innerHTML=`
+    <div class="metric-card"><div class="metric-label">기록 일수</div><div class="metric-val">${n}<span class="metric-unit">일</span></div></div>
+    <div class="metric-card"><div class="metric-label">총 지원</div><div class="metric-val">${sum('apply')}<span class="metric-unit">개</span></div></div>
+    <div class="metric-card"><div class="metric-label">FA5050</div><div class="metric-val">${faDays}<span class="metric-unit">일</span></div></div>
+    <div class="metric-card"><div class="metric-label">매십경 달성률</div><div class="metric-val">${pct(gyeongDays,n)}<span class="metric-unit">%</span></div></div>
+    <div class="metric-card"><div class="metric-label">매십면 달성률</div><div class="metric-val">${pct(myeonDays,n)}<span class="metric-unit">%</span></div></div>
+    <div class="metric-card"><div class="metric-label">평균 자존감</div><div class="metric-val">${avgEst}<span class="metric-unit">/5</span></div></div>
+  `;
+
+  const bars=[
+    {label:'매십경',k:'gyeong',goal:30},
+    {label:'매십면',k:'myeon',goal:30},
+    {label:'매십독',k:'dok',goal:30},
+    {label:'자소서 시청',k:'watch',goal:60},
+    {label:'자소서 작성',k:'write',goal:60},
+    {label:'기업분석',k:'company',goal:60},
+    {label:'필기/인적성',k:'exam',goal:60},
+  ];
+  ba.innerHTML=bars.map(b=>{
+    const v=avg(b.k); const pctV=Math.min(100,Math.round(v/b.goal*100));
+    const cls=pctV>=70?'':pctV>=40?'warn':'low';
+    return `<div class="progress-row">
+      <span class="progress-label">${b.label}</span>
+      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pctV}%"></div></div>
+      <span class="progress-val">${v}분</span>
+    </div>`;
+  }).join('');
+
+  ra.innerHTML=`
+    <div class="progress-row">
+      <span class="progress-label">매십경</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct(gyeongDays,n)}%"></div></div>
+      <span class="progress-val">${pct(gyeongDays,n)}%</span>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">매십면</span>
+      <div class="bar-track"><div class="bar-fill ${pct(myeonDays,n)<50?'low':''}" style="width:${pct(myeonDays,n)}%"></div></div>
+      <span class="progress-val">${pct(myeonDays,n)}%</span>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">매십독</span>
+      <div class="bar-track"><div class="bar-fill ${pct(dokDays,n)<50?'warn':''}" style="width:${pct(dokDays,n)}%"></div></div>
+      <span class="progress-val">${pct(dokDays,n)}%</span>
+    </div>
+    <div class="progress-row">
+      <span class="progress-label">FA5050</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct(faDays,n)}%"></div></div>
+      <span class="progress-val">${pct(faDays,n)}%</span>
+    </div>
+  `;
+}
+
+const METRICS=[
+  {k:'gyeong',label:'매십경',color:'#1D9E75'},
+  {k:'myeon',label:'매십면',color:'#378ADD'},
+  {k:'dok',label:'매십독',color:'#BA7517'},
+  {k:'watch',label:'자소서 시청',color:'#8B5CF6'},
+  {k:'write',label:'자소서 작성',color:'#D85A30'},
+  {k:'company',label:'기업분석',color:'#D4537E'},
+  {k:'exam',label:'필기/인적성',color:'#636363'},
+];
+
+function renderTrend(){
+  const data=loadData();
+  const cs=document.getElementById('chart-select');
+  cs.innerHTML=METRICS.map(m=>`
+    <button onclick="toggleMetric('${m.k}')" id="ms-${m.k}"
+      style="padding:5px 12px;border-radius:99px;border:1.5px solid ${m.color};background:${activeMetrics.includes(m.k)?m.color:'transparent'};color:${activeMetrics.includes(m.k)?'#fff':m.color};font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'Noto Sans KR',sans-serif">
+      ${m.label}
+    </button>
+  `).join('');
+
+  if(!data.length){
+    document.getElementById('trend-canvas').parentElement.innerHTML='<div class="empty"><strong>기록 없음</strong>기록이 쌓이면 추이를 볼 수 있어!</div>';
+    return;
+  }
+  drawChart(data);
+}
+
+function toggleMetric(k){
+  if(activeMetrics.includes(k)) activeMetrics=activeMetrics.filter(m=>m!==k);
+  else activeMetrics.push(k);
+  const data=loadData();
+  renderTrendButtons();
+  drawChart(data);
+}
+
+function renderTrendButtons(){
+  METRICS.forEach(m=>{
+    const btn=document.getElementById('ms-'+m.k);
+    if(!btn) return;
+    const on=activeMetrics.includes(m.k);
+    btn.style.background=on?m.color:'transparent';
+    btn.style.color=on?'#fff':m.color;
+  });
+}
+
+function drawChart(data){
+  const labels=data.map(r=>r.date.slice(5));
+  const datasets=METRICS.filter(m=>activeMetrics.includes(m.k)).map(m=>({
+    label:m.label,
+    data:data.map(r=>r[m.k]||0),
+    borderColor:m.color,
+    backgroundColor:m.color+'22',
+    tension:.35, fill:false, borderWidth:2, pointRadius:3, pointHoverRadius:5
+  }));
+  const legend=document.getElementById('trend-legend');
+  legend.innerHTML=METRICS.filter(m=>activeMetrics.includes(m.k)).map(m=>`
+    <span class="legend-item"><span class="legend-dot" style="background:${m.color}"></span>${m.label}</span>
+  `).join('');
+  if(chartInst) chartInst.destroy();
+  chartInst=new Chart(document.getElementById('trend-canvas'),{
+    type:'line', data:{labels,datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{font:{size:11},maxRotation:45},grid:{color:'rgba(0,0,0,0.05)'}},
+        y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'},beginAtZero:true,title:{display:true,text:'분',font:{size:11}}}
+      }
+    }
+  });
+}
+
+function renderLog(){
+  const data=[...loadData()].reverse();
+  const el=document.getElementById('log-list');
+  if(!data.length){
+    el.innerHTML='<div class="empty"><strong>기록 없음</strong>오늘 입력 탭에서 첫 기록을 남겨봐!</div>';
+    return;
+  }
+  el.innerHTML=data.map(r=>`
+    <div class="recent-row">
+      <span class="recent-date">${r.date}</span>
+      <span class="recent-info">경<b>${r.gyeong}</b> 면<b>${r.myeon}</b> 독<b>${r.dok}</b> · 작성<b>${r.write}</b>분 · 지원<b>${r.apply}</b>개</span>
+      <span class="badge ${r.fa===true?'badge-o':r.fa===false?'badge-x':'badge-na'}">${r.fa===true?'FA O':r.fa===false?'FA X':'—'}</span>
+    </div>
+  `).join('');
+}
+
+// Init
+document.getElementById('today-str').textContent=todayStr();
+renderStreak();
+
+document.getElementById('fa-yes').addEventListener('click',()=>setFA(true));
+document.getElementById('fa-no').addEventListener('click',()=>setFA(false));
+document.getElementById('save-btn').addEventListener('click',saveToday);
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+});
+</script>
+</body>
+</html>
