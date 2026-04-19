@@ -758,7 +758,7 @@ function renderSummary(){
   // 오늘이 평일인지, 이번 주 남은 평일 수
   const todayDow = now.getDay();
   const isWeekday = todayDow>=1 && todayDow<=5;
-  const passedWeekdays = Math.min(5, Math.max(0, todayDow===0?5:todayDow===6?5:todayDow));
+  const passedWeekdays = (todayDow===0||todayDow===6) ? 5 : todayDow;
 
   cr.style.display='block';
   document.getElementById('sub-days').textContent=`이번 주 (${monStr.slice(5)}~${friStr.slice(5)}) · ${wn}/${passedWeekdays}일 기록`;
