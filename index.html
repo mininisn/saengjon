@@ -728,8 +728,8 @@ function renderSummary(){
     <div class="kpi"><div class="kpi-label">기록 일수</div><div class="kpi-val">${n}<span class="kpi-unit">일</span></div></div>
     <div class="kpi"><div class="kpi-label">총 지원</div><div class="kpi-val">${sum('apply')}<span class="kpi-unit">개</span></div></div>
     <div class="kpi"><div class="kpi-label">FA5050</div><div class="kpi-val">${fD}<span class="kpi-unit">일</span></div></div>
-    <div class="kpi"><div class="kpi-label">매십경 달성</div><div class="kpi-val">${pct(gD,n)}<span class="kpi-unit">%</span></div><div class="kpi-sub">${gD}/${n}일</div></div>
-    <div class="kpi"><div class="kpi-label">매십면 달성</div><div class="kpi-val">${pct(mD,n)}<span class="kpi-unit">%</span></div><div class="kpi-sub">${mD}/${n}일</div></div>
+    <div class="kpi"><div class="kpi-label">매십경 달성</div><div class="kpi-val">${gD}<span class="kpi-unit">일</span></div><div class="kpi-sub">전체 ${n}일 중</div></div>
+    <div class="kpi"><div class="kpi-label">매십면 달성</div><div class="kpi-val">${mD}<span class="kpi-unit">일</span></div><div class="kpi-sub">전체 ${n}일 중</div></div>
     <div class="kpi"><div class="kpi-label">평균 자존감</div><div class="kpi-val">${aE}<span class="kpi-unit">/5</span></div><div class="kpi-sub">취업확률 ${aP}%</div></div>
   `;
 
