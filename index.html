@@ -322,23 +322,23 @@ body {
 .log-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .log-table th {
   background: var(--surface2);
   color: var(--text3);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: .04em;
-  padding: 8px 10px;
+  letter-spacing: .03em;
+  padding: 7px 6px;
   text-align: center;
   border-bottom: 1px solid var(--border2);
   position: sticky;
   top: 0;
 }
 .log-table td {
-  padding: 9px 10px;
+  padding: 8px 6px;
   text-align: center;
   border-bottom: 1px solid var(--border);
   color: var(--text2);
@@ -945,7 +945,7 @@ function renderLog(){
     // 월요일~금요일 날짜 범위 표시
     const mon = new Date(wk);
     const fri = new Date(wk); fri.setDate(mon.getDate()+4);
-    const rangeLabel = (mon.getMonth()+1)+'/'+(mon.getDate())+'~'+(fri.getMonth()+1)+'/'+fri.getDate()+' 누계';
+    const rangeLabel = mon.getDate()+'~'+fri.getDate()+' 누계';
     return '<tr class="sum-row">'+cols.map((c,i)=>{
       if(c.key==='date') return `<td>${rangeLabel}</td>`;
       if(c.key==='fa')   return `<td>${s.faO}/${s.faTotal}</td>`;
