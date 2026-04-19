@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>생존일지 비교</title>
+<link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:#F5F4F0;--surface:#FFFFFF;--surface2:#EEECE7;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);
+  --text:#18181A;--text2:#5C5C61;--text3:#A0A0A8;
+  --green:#16A773;--green-bg:#E8F8F2;--green-dark:#0D7A54;
+  --amber:#C47C14;--amber-bg:#FEF3DC;
+  --red:#D44B4A;--red-bg:#FDEAEA;
+  --blue:#3070D4;--purple:#7C5CCC;
+  --r:12px;--r-lg:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.header-title{font-size:15px;font-weight:700;}
+.header-title small{font-size:12px;font-weight:500;color:var(--text3);margin-left:4px;}
+.back-link{font-size:12px;font-weight:600;color:var(--blue);text-decoration:none;padding:5px 10px;border:1px solid var(--blue);border-radius:8px;}
+.container{max-width:760px;margin:0 auto;padding:18px 14px 80px;}
+.card{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);padding:18px;margin-bottom:12px;}
+.card-header{display:flex;align-items:center;gap:9px;margin-bottom:16px;}
+.card-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ig{background:var(--green-bg);}.ib{background:#EBF2FE;}.ia{background:var(--amber-bg);}
+.card-title{font-size:14px;font-weight:700;flex:1;}
+.card-sub{font-size:12px;color:var(--text3);}
+.refresh-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);font-family:inherit;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;}
+.refresh-btn:hover{background:var(--surface);}
+
+/* 랭킹 */
+.ranking-list{display:flex;flex-direction:column;gap:10px;}
+.rank-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);background:var(--surface2);}
+.rank-row.rank-1{background:var(--amber-bg);border:1px solid rgba(196,124,20,.2);}
+.rank-row.rank-2{background:#F0EBFA;border:1px solid rgba(124,92,204,.15);}
+.rank-row.rank-3{background:var(--green-bg);border:1px solid rgba(22,167,115,.15);}
+.rank-num{font-size:18px;font-weight:700;width:28px;text-align:center;flex-shrink:0;}
+.rank-1 .rank-num{color:var(--amber);}
+.rank-2 .rank-num{color:var(--purple);}
+.rank-3 .rank-num{color:var(--green);}
+.rank-nick{font-size:14px;font-weight:700;flex:1;}
+.rank-val{font-size:13px;font-weight:600;color:var(--text2);}
+.rank-bar-wrap{flex:2;display:flex;align-items:center;gap:8px;}
+.rank-track{flex:1;height:6px;background:rgba(0,0,0,0.08);border-radius:99px;overflow:hidden;}
+.rank-fill{height:6px;border-radius:99px;transition:width .5s ease;}
+
+/* 탭 */
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:12px;padding:3px;margin-bottom:18px;overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:8px 12px;border:none;background:transparent;border-radius:10px;font-family:inherit;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tab.active{background:var(--surface);color:var(--text);font-weight:700;box-shadow:0 1px 5px rgba(0,0,0,0.08);}
+
+/* 비교 표 */
+.compare-table{width:100%;border-collapse:collapse;font-size:13px;}
+.compare-table th{background:var(--surface2);color:var(--text3);font-size:11px;font-weight:700;padding:8px 10px;text-align:center;border-bottom:1px solid var(--border2);}
+.compare-table td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--border);color:var(--text2);font-weight:500;}
+.compare-table td:first-child{text-align:left;font-weight:700;color:var(--text);}
+.compare-table tbody tr:last-child td{border-bottom:none;}
+.compare-table .best{color:var(--green-dark);font-weight:700;}
+.compare-table .label-col{font-size:12px;color:var(--text3);font-weight:600;}
+
+/* 차트 */
+.chart-wrap{position:relative;width:100%;}
+.legend-wrap{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* 로딩 */
+.loading{text-align:center;padding:40px;color:var(--text3);font-size:14px;}
+
+/* 선택 탭 */
+.metric-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+.metric-tab{padding:5px 12px;border-radius:99px;border:1.5px solid var(--border2);background:var(--bg);font-family:inherit;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .15s;}
+.metric-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">생존 비교 <small>커리어PT</small></div>
+  <a href="index.html" class="back-link">← 내 일지</a>
+</div>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab active" data-tab="ranking">랭킹</button>
+    <button class="tab" data-tab="compare">항목 비교</button>
+    <button class="tab" data-tab="chart">추이 비교</button>
+  </div>
+
+  <!-- 랭킹 탭 -->
+  <div id="tab-ranking">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ia">🏆</div>
+        <div class="card-title">이번 주 매십경 달성률</div>
+        <button class="refresh-btn" id="refresh-btn">새로고침</button>
+      </div>
+      <div class="metric-tabs" id="ranking-metrics">
+        <button class="metric-tab active" data-metric="gyeong_rate">매십경 달성률</button>
+        <button class="metric-tab" data-metric="myeon_rate">매십면 달성률</button>
+        <button class="metric-tab" data-metric="apply">총 지원수</button>
+        <button class="metric-tab" data-metric="write">자소서 시간</button>
+        <button class="metric-tab" data-metric="lecture">강의 시간</button>
+        <button class="metric-tab" data-metric="fa_rate">FA 달성률</button>
+      </div>
+      <div class="ranking-list" id="ranking-list"><div class="loading">불러오는 중...</div></div>
+    </div>
+  </div>
+
+  <!-- 항목 비교 탭 -->
+  <div id="tab-compare" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ib">📊</div>
+        <div class="card-title">전체 누적 비교</div>
+        <div class="card-sub" id="compare-period"></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="compare-table" id="compare-table">
+          <tbody><tr><td class="loading">불러오는 중...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 추이 비교 탭 -->
+  <div id="tab-chart" style="display:none">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon ib">📈</div>
+        <div class="card-title">항목별 추이 비교</div>
+      </div>
+      <div class="metric-tabs" id="chart-metrics">
+        <button class="metric-tab active" data-metric="gyeong">매십경</button>
+        <button class="metric-tab" data-metric="myeon">매십면</button>
+        <button class="metric-tab" data-metric="write">자소서</button>
+        <button class="metric-tab" data-metric="lecture">강의</button>
+        <button class="metric-tab" data-metric="exam">필기</button>
+        <button class="metric-tab" data-metric="apply">지원</button>
+      </div>
+      <div class="chart-wrap" style="height:280px"><canvas id="compare-chart" role="img" aria-label="멤버별 항목 추이 비교 차트">멤버별 비교 차트</canvas></div>
+      <div class="legend-wrap" id="compare-legend"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL='https://odewmfdmzkmhvwvibbnc.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kZXdtZmRtemttaHZ3dmliYm5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzM2MDEsImV4cCI6MjA5MjEwOTYwMX0.-6J04585TzAKTmGqw5Glo7X8lcwVpgem7j0plLQS-Xs';
+
+const MEMBER_COLORS=['#16A773','#3070D4','#C47C14','#D85A30','#7C5CCC','#C44484','#5C5C61','#D44B4A'];
+
+async function fetchAll(){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/saengjon_logs?order=date.asc`,{
+    headers:{'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`}
+  });
+  return res.json();
+}
+
+let allData=[], currentRankMetric='gyeong_rate', currentChartMetric='gyeong', compareChartInst=null;
+
+function getWeekBounds(){
+  const now=new Date(); const dow=now.getDay();
+  const diffToMon=dow===0?-6:1-dow;
+  const mon=new Date(now); mon.setHours(0,0,0,0); mon.setDate(now.getDate()+diffToMon);
+  const fri=new Date(mon); fri.setDate(mon.getDate()+4);
+  const toDS=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return {monStr:toDS(mon),friStr:toDS(fri)};
+}
+
+function groupByNickname(data){
+  const map={};
+  data.forEach(r=>{ if(!map[r.nickname]) map[r.nickname]=[]; map[r.nickname].push(r); });
+  return map;
+}
+
+function calcStats(rows, weekOnly=false){
+  let data=rows;
+  if(weekOnly){
+    const {monStr,friStr}=getWeekBounds();
+    data=rows.filter(r=>{ if(r.date<monStr||r.date>friStr) return false; const d=new Date(r.date); return d.getDay()>=1&&d.getDay()<=5; });
+  }
+  const n=data.length; if(!n) return null;
+  const sum=k=>data.reduce((a,r)=>a+(r[k]||0),0);
+  const gD=data.filter(r=>r.gyeong>=10).length;
+  const mD=data.filter(r=>r.myeon>=10).length;
+  const fD=data.filter(r=>r.fa==='O').length;
+  return {
+    n, gyeong_rate:n?Math.round(gD/n*100):0,
+    myeon_rate:n?Math.round(mD/n*100):0,
+    fa_rate:n?Math.round(fD/n*100):0,
+    apply:sum('apply'), write:sum('write'), lecture:sum('lecture'),
+    gyeong:sum('gyeong'), myeon:sum('myeon'), exam:sum('exam'),
+    gyeong_avg:Math.round(sum('gyeong')/n), myeon_avg:Math.round(sum('myeon')/n),
+  };
+}
+
+function renderRanking(){
+  const grouped=groupByNickname(allData);
+  const metricLabel={gyeong_rate:'매십경 달성률',myeon_rate:'매십면 달성률',apply:'총 지원수',write:'자소서 시간',lecture:'강의 시간',fa_rate:'FA 달성률'};
+  const metricUnit={gyeong_rate:'%',myeon_rate:'%',apply:'개',write:'분',lecture:'분',fa_rate:'%'};
+  const isWeekly=['gyeong_rate','myeon_rate','fa_rate'].includes(currentRankMetric);
+
+  const members=Object.entries(grouped).map(([nick,rows])=>{
+    const stats=calcStats(rows, isWeekly);
+    return {nick, val:stats?stats[currentRankMetric]:0, n:stats?stats.n:0};
+  }).sort((a,b)=>b.val-a.val);
+
+  const maxVal=Math.max(...members.map(m=>m.val),1);
+  const list=document.getElementById('ranking-list');
+  const {monStr,friStr}=getWeekBounds();
+
+  document.querySelector('.card-header .card-title').textContent=
+    isWeekly?`이번 주 ${metricLabel[currentRankMetric]} (${monStr.slice(5)}~${friStr.slice(5)})`:`누적 ${metricLabel[currentRankMetric]}`;
+
+  list.innerHTML=members.map((m,i)=>{
+    const color=MEMBER_COLORS[i%MEMBER_COLORS.length];
+    const cls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
+    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    return `<div class="rank-row ${cls}">
+      <div class="rank-num">${medal}</div>
+      <div class="rank-nick">${m.nick}</div>
+      <div class="rank-bar-wrap">
+        <div class="rank-track"><div class="rank-fill" style="width:${Math.round(m.val/maxVal*100)}%;background:${color}"></div></div>
+      </div>
+      <div class="rank-val">${m.val}${metricUnit[currentRankMetric]}</div>
+    </div>`;
+  }).join('') || '<div class="loading">데이터 없음</div>';
+}
+
+function renderCompare(){
+  const grouped=groupByNickname(allData);
+  const nicks=Object.keys(grouped);
+  if(!nicks.length){ document.querySelector('#compare-table tbody').innerHTML='<tr><td>데이터 없음</td></tr>'; return; }
+
+  const rows=[
+    {label:'기록 일수',key:'n',unit:'일'},
+    {label:'매십경 달성률',key:'gyeong_rate',unit:'%'},
+    {label:'매십면 달성률',key:'myeon_rate',unit:'%'},
+    {label:'FA 달성률',key:'fa_rate',unit:'%'},
+    {label:'총 지원수',key:'apply',unit:'개'},
+    {label:'자소서 시간',key:'write',unit:'분'},
+    {label:'강의 시간',key:'lecture',unit:'분'},
+    {label:'필기 시간',key:'exam',unit:'분'},
+  ];
+
+  const statsMap={};
+  nicks.forEach(nick=>{ statsMap[nick]=calcStats(grouped[nick])||{}; });
+
+  const thead=`<thead><tr><th></th>${nicks.map((n,i)=>`<th style="color:${MEMBER_COLORS[i%MEMBER_COLORS.length]}">${n}</th>`).join('')}</tr></thead>`;
+  const tbody=rows.map(row=>{
+    const vals=nicks.map(n=>statsMap[n][row.key]||0);
+    const maxVal=Math.max(...vals);
+    return `<tr><td class="label-col">${row.label}</td>${nicks.map((n,i)=>{
+      const v=statsMap[n][row.key]||0;
+      const isBest=v===maxVal&&maxVal>0;
+      return `<td class="${isBest?'best':''}">${v}${row.unit}</td>`;
+    }).join('')}</tr>`;
+  }).join('');
+
+  const allDates=[...new Set(allData.map(r=>r.date))].sort();
+  document.getElementById('compare-period').textContent=allDates.length?`${allDates[0].slice(5)}~${allDates[allDates.length-1].slice(5)} 전체`:'';
+  document.getElementById('compare-table').innerHTML=thead+`<tbody>${tbody}</tbody>`;
+}
+
+function renderChartCompare(){
+  const grouped=groupByNickname(allData);
+  const nicks=Object.keys(grouped);
+  const allDates=[...new Set(allData.map(r=>r.date))].sort();
+  if(!nicks.length||!allDates.length) return;
+
+  const datasets=nicks.map((nick,i)=>{
+    const color=MEMBER_COLORS[i%MEMBER_COLORS.length];
+    const rowMap={};
+    grouped[nick].forEach(r=>rowMap[r.date]=r);
+    return {
+      label:nick,
+      data:allDates.map(d=>rowMap[d]?rowMap[d][currentChartMetric]||0:null),
+      borderColor:color, backgroundColor:color+'22',
+      tension:.35, fill:false, borderWidth:2, pointRadius:3, pointHoverRadius:5,
+      spanGaps:true
+    };
+  });
+
+  document.getElementById('compare-legend').innerHTML=nicks.map((n,i)=>`<span class="legend-item"><span class="legend-dot" style="background:${MEMBER_COLORS[i%MEMBER_COLORS.length]}"></span>${n}</span>`).join('');
+
+  if(compareChartInst) compareChartInst.destroy();
+  compareChartInst=new Chart(document.getElementById('compare-chart'),{
+    type:'line',
+    data:{labels:allDates.map(d=>d.slice(5)),datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:11},maxRotation:45,autoSkip:true},grid:{color:'rgba(0,0,0,0.04)'}},
+        y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'},beginAtZero:true}}}
+  });
+}
+
+function switchTab(name){
+  ['ranking','compare','chart'].forEach(t=>{ document.getElementById('tab-'+t).style.display=t===name?'block':'none'; });
+  document.querySelectorAll('.tab').forEach(t=>{ t.className='tab'+(t.dataset.tab===name?' active':''); });
+  if(name==='compare') renderCompare();
+  if(name==='chart') renderChartCompare();
+}
+
+async function loadAndRender(){
+  document.getElementById('ranking-list').innerHTML='<div class="loading">불러오는 중...</div>';
+  allData=await fetchAll();
+  renderRanking();
+}
+
+// 이벤트
+document.getElementById('refresh-btn').addEventListener('click',loadAndRender);
+document.querySelectorAll('.tab').forEach(btn=>{ btn.addEventListener('click',()=>switchTab(btn.dataset.tab)); });
+document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEach(b=>b.className='metric-tab');
+    btn.className='metric-tab active';
+    currentRankMetric=btn.dataset.metric;
+    renderRanking();
+  });
+});
+document.getElementById('chart-metrics').querySelectorAll('.metric-tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.getElementById('chart-metrics').querySelectorAll('.metric-tab').forEach(b=>b.className='metric-tab');
+    btn.className='metric-tab active';
+    currentChartMetric=btn.dataset.metric;
+    renderChartCompare();
+  });
+});
+
+loadAndRender();
+</script>
+</body>
+</html>
