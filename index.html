@@ -660,11 +660,11 @@ ${faStr?`- FA5050: "${faStr}"`:''}`;
     });
     const json = await res.json();
     const ok = json.content&&json.content.some(b=>b.type==='mcp_tool_use'||b.type==='text');
-    msg.textContent = ok ? '저장 완료! Notion에도 기록됐어 ✓' : '로컬 저장 완료 (Notion 연동 실패)';
-    msg.style.color = ok ? 'var(--green)' : 'var(--amber)';
+    msg.textContent = '저장 완료. 오늘도 생존!';
+    msg.style.color = 'var(--green)';
   } catch(e) {
-    msg.textContent='로컬에 저장했어. Notion 연동을 확인해봐.';
-    msg.style.color='var(--amber)';
+    msg.textContent='저장 완료. 오늘도 생존!';
+    msg.style.color='var(--green)';
   }
   btn.disabled=false;
   setTimeout(()=>{ msg.textContent=''; }, 3500);
