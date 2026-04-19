@@ -124,7 +124,7 @@ body {
 }
 
 /* 입력 필드 */
-.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow: hidden; }
 @media(max-width:440px){ .input-grid { grid-template-columns: 1fr; } }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text2); }
@@ -136,6 +136,9 @@ body {
   background: var(--bg); color: var(--text);
   outline: none; transition: border-color .15s, background .15s;
   -moz-appearance: textfield;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 .field input[type=number]::-webkit-outer-spin-button,
 .field input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -371,7 +374,7 @@ body {
 
 <div class="header">
   <div class="header-left">
-    <div class="logo">📋</div>
+  
     <div class="header-title">생존일지 <small>커리어PT</small></div>
   </div>
   <div class="today-badge" id="today-badge"></div>
