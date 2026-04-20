@@ -230,8 +230,8 @@ function renderRanking(){
 
   list.innerHTML=ranked.map((m,i)=>{
     const color=MEMBER_COLORS[i%MEMBER_COLORS.length];
-    const cls=m.rank===1?'rank-1':m.rank===2?'rank-2':'';
-    const medal=m.rank===1?'🥇':m.rank===2?'🥈':'';
+    const cls=maxVal===0?'':m.rank===1?'rank-1':m.rank===2?'rank-2':'';
+    const medal=maxVal===0?'':m.rank===1?'🥇':m.rank===2?'🥈':'';
     return `<div class="rank-row ${cls}">
       <div class="rank-num">${medal}</div>
       <div class="rank-nick">${m.nick}</div>
