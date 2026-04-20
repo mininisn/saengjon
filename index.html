@@ -258,7 +258,7 @@ async function sbFetch(method, body=null, extra=''){
     body: body ? JSON.stringify(body) : null
   });
   if(!res.ok){ const e=await res.text(); throw new Error(e); }
-  return res.status===204 ? null : res.json();
+  try { return res.status===204 ? null : await res.json(); } catch(e) { return null; }
 }
 
 async function loadData(){
@@ -304,25 +304,34 @@ async function saveToday(){
   const nick = getNickname();
   if(!nick){ alert('닉네임을 입력해줘!'); return; }
   const today = todayStr();
-  const entry = {
-    nickname: nick, date: today,
-    gyeong:gv('f-gyeong'), myeon:gv('f-myeon'), dok:gv('f-dok'),
-    lecture:gv('f-lecture'), write:gv('f-write'), exam:gv('f-exam'), apply:gv('f-apply'),
-    esteem:gv('f-esteem'), prob:gv('f-prob'),
-    fa: faVal===true?'O':faVal===false?'X':null,
-    focus: [...focusSelected]
-  };
-  // 감사일기는 로컬에만 저장
-  const diaryText = document.getElementById('f-diary').value.trim();
-  if(diaryText){
-    const diaryStore = JSON.parse(localStorage.getItem('saengjon_diary')||'{}');
-    diaryStore[today] = diaryText;
-    localStorage.setItem('saengjon_diary', JSON.stringify(diaryStore));
-  }
   const msg=document.getElementById('save-msg');
   const btn=document.getElementById('save-btn');
   msg.textContent='저장 중...'; msg.style.color='var(--text3)'; btn.disabled=true;
+
   try {
+    // 오늘 기존 기록 불러오기
+    const existing = await sbFetch('GET', null, `?nickname=eq.${encodeURIComponent(nick)}&date=eq.${today}`);
+    const prev = (existing && existing.length) ? existing[0] : {};
+
+    // 입력값이 있으면 새 값, 없으면 기존 값 유지
+    const fv = id => { const v = document.getElementById(id).value; return v!=='' ? +v : (prev[id.replace('f-','')] || 0); };
+    const entry = {
+      nickname: nick, date: today,
+      gyeong: fv('f-gyeong'), myeon: fv('f-myeon'), dok: fv('f-dok'),
+      lecture: fv('f-lecture'), write: fv('f-write'), exam: fv('f-exam'), apply: fv('f-apply'),
+      esteem: fv('f-esteem'), prob: fv('f-prob'),
+      fa: faVal!==null ? (faVal===true?'O':'X') : (prev.fa || null),
+      focus: focusSelected.size>0 ? [...focusSelected].join(',') : (prev.focus || '')
+    };
+
+    // 감사일기는 로컬에만 저장
+    const diaryText = document.getElementById('f-diary').value.trim();
+    if(diaryText){
+      const diaryStore = JSON.parse(localStorage.getItem('saengjon_diary')||'{}');
+      diaryStore[today] = diaryText;
+      localStorage.setItem('saengjon_diary', JSON.stringify(diaryStore));
+    }
+
     await sbFetch('POST', entry);
     msg.textContent='저장 완료. 오늘도 생존!'; msg.style.color='var(--green)';
   } catch(e) {
