@@ -146,6 +146,10 @@ body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--b
       <div class="nickname-field">
         <input type="text" class="nickname-input" id="f-nickname" placeholder="닉네임을 입력해주세요. (예: 페이리스)">
       </div>
+      <div class="field" style="margin-top:10px">
+        <label>기록 날짜</label>
+        <input type="date" id="f-date" style="font-family:inherit;font-size:15px;font-weight:600;padding:10px 12px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;width:100%;transition:border-color .15s;" onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor='var(--border2)'">
+      </div>
     </div>
     <div class="card">
       <div class="card-header"><div class="card-icon ig">⏱</div><div class="card-title">루틴 실행 시간</div><div class="card-sub">단위: 분</div></div>
@@ -303,7 +307,7 @@ document.getElementById('f-nickname').addEventListener('change', e=>{
 async function saveToday(){
   const nick = getNickname();
   if(!nick){ alert('닉네임을 입력해줘!'); return; }
-  const today = todayStr();
+  const today = document.getElementById('f-date').value || todayStr();
   const msg=document.getElementById('save-msg');
   const btn=document.getElementById('save-btn');
   msg.textContent='저장 중...'; msg.style.color='var(--text3)'; btn.disabled=true;
@@ -484,6 +488,7 @@ function renderDiary(){
 
 // 초기화
 document.getElementById('today-badge').textContent=todayStr();
+document.getElementById('f-date').value=todayStr();
 const savedNick=localStorage.getItem('saengjon_nickname');
 if(savedNick) document.getElementById('f-nickname').value=savedNick;
 renderStreak();
