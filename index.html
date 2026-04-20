@@ -253,7 +253,7 @@ async function sbFetch(method, body=null, extra=''){
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      'Prefer': method==='POST' ? 'resolution=merge-duplicates' : ''
+      'Prefer': method==='POST' ? 'resolution=merge-duplicates' : method==='PATCH' ? 'return=minimal' : ''
     },
     body: body ? JSON.stringify(body) : null
   });
@@ -332,7 +332,12 @@ async function saveToday(){
       localStorage.setItem('saengjon_diary', JSON.stringify(diaryStore));
     }
 
-    await sbFetch('POST', entry);
+    // 기존 기록 있으면 PATCH(수정), 없으면 POST(신규)
+    if(existing && existing.length){
+      await sbFetch('PATCH', entry, `?nickname=eq.${encodeURIComponent(nick)}&date=eq.${today}`);
+    } else {
+      await sbFetch('POST', entry);
+    }
     msg.textContent='저장 완료. 오늘도 생존!'; msg.style.color='var(--green)';
   } catch(e) {
     msg.textContent='저장 실패. 닉네임 확인해봐!'; msg.style.color='var(--red)';
