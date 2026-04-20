@@ -221,10 +221,17 @@ function renderRanking(){
   document.querySelector('.card-header .card-title').textContent=
     isWeekly?`이번 주 ${metricLabel[currentRankMetric]} (${monStr.slice(5)}~${friStr.slice(5)})`:`누적 ${metricLabel[currentRankMetric]}`;
 
-  list.innerHTML=members.map((m,i)=>{
+  // 공동순위 계산 (1위, 2위만 메달)
+  let rank = 1;
+  const ranked = members.map((m, i) => {
+    if(i > 0 && members[i-1].val !== m.val) rank = i + 1;
+    return {...m, rank};
+  });
+
+  list.innerHTML=ranked.map((m,i)=>{
     const color=MEMBER_COLORS[i%MEMBER_COLORS.length];
-    const cls=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'';
-    const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+    const cls=m.rank===1?'rank-1':m.rank===2?'rank-2':'';
+    const medal=m.rank===1?'🥇':m.rank===2?'🥈':'';
     return `<div class="rank-row ${cls}">
       <div class="rank-num">${medal}</div>
       <div class="rank-nick">${m.nick}</div>
