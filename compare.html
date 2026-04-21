@@ -269,15 +269,24 @@ function renderCompare(){
   const statsMap={};
   nicks.forEach(nick=>{ statsMap[nick]=calcStats(grouped[nick])||{}; });
 
-  const thead=`<thead><tr><th></th>${nicks.map((n,i)=>`<th style="color:${MEMBER_COLORS[i%MEMBER_COLORS.length]}">${n}</th>`).join('')}</tr></thead>`;
+  const thead=`<thead><tr>
+    <th style="position:sticky;left:0;background:var(--surface2);z-index:2;min-width:90px"></th>
+    ${nicks.map((n,i)=>`<th style="color:${MEMBER_COLORS[i%MEMBER_COLORS.length]};min-width:72px">${n}</th>`).join('')}
+    <th style="position:sticky;right:0;background:var(--surface2);z-index:2;min-width:72px;color:var(--text3)">전체 평균</th>
+  </tr></thead>`;
   const tbody=rows.map(row=>{
     const vals=nicks.map(n=>statsMap[n][row.key]||0);
     const maxVal=Math.max(...vals);
-    return `<tr><td class="label-col">${row.label}</td>${nicks.map((n,i)=>{
-      const v=statsMap[n][row.key]||0;
-      const isBest=v===maxVal&&maxVal>0;
-      return `<td class="${isBest?'best':''}">${v}${row.unit}</td>`;
-    }).join('')}</tr>`;
+    const avg=nicks.length?Math.round(vals.reduce((a,b)=>a+b,0)/nicks.length):0;
+    return `<tr>
+      <td class="label-col" style="position:sticky;left:0;background:var(--surface);z-index:1">${row.label}</td>
+      ${nicks.map((n,i)=>{
+        const v=statsMap[n][row.key]||0;
+        const isBest=v===maxVal&&maxVal>0;
+        return `<td class="${isBest?'best':''}">${v}${row.unit}</td>`;
+      }).join('')}
+      <td style="position:sticky;right:0;background:var(--surface);z-index:1;color:var(--text3);font-weight:600">${avg}${row.unit}</td>
+    </tr>`;
   }).join('');
 
   const allDates=[...new Set(allData.map(r=>r.date))].sort();
