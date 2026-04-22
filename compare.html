@@ -196,7 +196,7 @@ function calcStats(rows, weekOnly=false){
   const gD=data.filter(r=>r.gyeong>=10).length;
   const mD=data.filter(r=>r.myeon>=10).length;
   const uD=data.filter(r=>r.un>=10).length;
-  const fD=data.filter(r=>r.fa==='O').length;
+  const fD=data.filter(r=>r.fa?.trim().toUpperCase()==='O').length;
   return {
     n, gyeong_rate:n?Math.round(gD/n*100):0,
     myeon_rate:n?Math.round(mD/n*100):0,

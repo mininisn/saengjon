@@ -327,7 +327,7 @@ async function saveToday(){
       interview: fv('f-interview'),
       lecture: fv('f-lecture'), write: fv('f-write'), exam: fv('f-exam'), apply: fv('f-apply'),
       esteem: fv('f-esteem'), prob: fv('f-prob'),
-      fa: faVal!==null ? (faVal===true?'O':'X') : (prev.fa || null),
+      fa: faVal!==null ? (faVal===true?'O':'X') : (prev.fa?.trim().toUpperCase() || null),
       focus: focusSelected.size>0 ? [...focusSelected].join(',') : (prev.focus || '')
     };
 
@@ -399,7 +399,7 @@ async function renderSummary(){
   const gD=data.filter(r=>r.gyeong>=10).length;
   const mD=data.filter(r=>r.myeon>=10).length;
   const dD=data.filter(r=>r.dok>=10).length;
-  const fD=data.filter(r=>r.fa==='O').length;
+  const fD=data.filter(r=>r.fa?.trim().toUpperCase()==='O').length;
   const aE=(sum('esteem')/n).toFixed(1);
   const aP=Math.round(sum('prob')/n);
   kg.innerHTML=`
@@ -423,7 +423,7 @@ async function renderSummary(){
   const wgD=weekData.filter(r=>r.gyeong>=10).length;
   const wmD=weekData.filter(r=>r.myeon>=10).length;
   const wdD=weekData.filter(r=>r.dok>=10).length;
-  const wfD=weekData.filter(r=>r.fa==='O').length;
+  const wfD=weekData.filter(r=>r.fa?.trim().toUpperCase()==='O').length;
   const todayDow=now.getDay();
   const passedWeekdays=(todayDow===0||todayDow===6)?5:todayDow;
   cr.style.display='block';
@@ -471,9 +471,9 @@ async function renderLog(){
   const cols=[{label:'날짜',key:'date'},{label:'매십경',key:'gyeong',unit:'분'},{label:'매십면',key:'myeon',unit:'분'},{label:'매십독',key:'dok',unit:'분'},{label:'매십운',key:'un',unit:'분'},{label:'강의',key:'lecture',unit:'분'},{label:'자소서',key:'write',unit:'분'},{label:'필기',key:'exam',unit:'분'},{label:'면접대비',key:'interview',unit:'분'},{label:'지원',key:'apply',unit:'개'},{label:'FA',key:'fa'}];
   const sundayDates=new Set(data.filter(r=>new Date(r.date).getDay()===0).map(r=>r.date));
   const weekSums={};
-  data.forEach(r=>{ const dow=new Date(r.date).getDay(); if(dow<1||dow>5) return; const wk=getWeekKey(r.date); if(!weekSums[wk]) weekSums[wk]={gyeong:0,myeon:0,dok:0,lecture:0,write:0,exam:0,apply:0,faO:0,faTotal:0}; NUM_COLS.forEach(k=>{ weekSums[wk][k]+=(r[k]||0); }); if(r.fa==='O') weekSums[wk].faO++; if(r.fa) weekSums[wk].faTotal++; });
+  data.forEach(r=>{ const dow=new Date(r.date).getDay(); if(dow<1||dow>5) return; const wk=getWeekKey(r.date); if(!weekSums[wk]) weekSums[wk]={gyeong:0,myeon:0,dok:0,lecture:0,write:0,exam:0,apply:0,faO:0,faTotal:0}; NUM_COLS.forEach(k=>{ weekSums[wk][k]+=(r[k]||0); }); if(r.fa?.trim().toUpperCase()==='O') weekSums[wk].faO++; if(r.fa) weekSums[wk].faTotal++; });
   const rows=[...data].reverse();
-  const renderRow=r=>'<tr>'+cols.map((c,i)=>{ let display='',cls=''; if(c.key==='date'){display=r.date.slice(5);} else if(c.key==='fa'){display=r.fa||'—';cls=r.fa==='O'?' class="td-o"':r.fa==='X'?' class="td-x"':'';} else{const val=r[c.key]||0;display=val+c.unit;if(c.key==='gyeong'&&val>=10)cls=' class="td-hi"';if(c.key==='myeon'&&val>=10)cls=' class="td-hi"';} return `<td${cls}>${display}</td>`; }).join('')+'</tr>';
+  const renderRow=r=>'<tr>'+cols.map((c,i)=>{ let display='',cls=''; if(c.key==='date'){display=r.date.slice(5);} else if(c.key==='fa'){display=r.fa||'—';cls=r.fa?.trim().toUpperCase()==='O'?' class="td-o"':r.fa?.trim().toUpperCase()==='X'?' class="td-x"':'';} else{const val=r[c.key]||0;display=val+c.unit;if(c.key==='gyeong'&&val>=10)cls=' class="td-hi"';if(c.key==='myeon'&&val>=10)cls=' class="td-hi"';} return `<td${cls}>${display}</td>`; }).join('')+'</tr>';
   const renderSumRow=wk=>{ const s=weekSums[wk]; if(!s) return ''; const mon=new Date(wk); const fri=new Date(wk); fri.setDate(mon.getDate()+4); const rangeLabel=mon.getDate()+'~'+fri.getDate()+' 누계'; return '<tr class="sum-row">'+cols.map(c=>{ if(c.key==='date') return `<td>${rangeLabel}</td>`; if(c.key==='fa') return `<td>${s.faO}/${s.faTotal}</td>`; return `<td>${s[c.key]||0}${c.unit}</td>`; }).join('')+'</tr>'; };
   let html='';
   rows.forEach(r=>{ html+=renderRow(r); if(new Date(r.date).getDay()===0&&sundayDates.has(r.date)) html+=renderSumRow(getWeekKey(r.date)); });
