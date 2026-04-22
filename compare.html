@@ -106,9 +106,12 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
         <button class="metric-tab active" data-metric="gyeong_rate">매십경 달성률</button>
         <button class="metric-tab" data-metric="myeon_rate">매십면 달성률</button>
         <button class="metric-tab" data-metric="un_rate">매십운 달성률</button>
+        <button class="metric-tab" data-metric="dok_rate">매십독 달성률</button>
         <button class="metric-tab" data-metric="apply">총 지원수</button>
         <button class="metric-tab" data-metric="write">자소서 시간</button>
         <button class="metric-tab" data-metric="lecture">강의 시간</button>
+        <button class="metric-tab" data-metric="exam">필기 시간</button>
+        <button class="metric-tab" data-metric="interview">면접 시간</button>
         <button class="metric-tab" data-metric="fa_rate">FA 달성률</button>
       </div>
       <div class="ranking-list" id="ranking-list"><div class="loading">불러오는 중...</div></div>
@@ -196,11 +199,13 @@ function calcStats(rows, weekOnly=false){
   const gD=data.filter(r=>r.gyeong>=10).length;
   const mD=data.filter(r=>r.myeon>=10).length;
   const uD=data.filter(r=>r.un>=10).length;
+  const dkD=data.filter(r=>r.dok>=10).length;
   const fD=data.filter(r=>r.fa?.trim().toUpperCase()==='O').length;
   return {
     n, gyeong_rate:n?Math.round(gD/n*100):0,
     myeon_rate:n?Math.round(mD/n*100):0,
     un_rate:n?Math.round(uD/n*100):0,
+    dok_rate:n?Math.round(dkD/n*100):0,
     fa_rate:n?Math.round(fD/n*100):0,
     apply:sum('apply'), write:sum('write'), lecture:sum('lecture'),
     gyeong:sum('gyeong'), myeon:sum('myeon'), un:sum('un'), exam:sum('exam'), interview:sum('interview'),
@@ -210,9 +215,9 @@ function calcStats(rows, weekOnly=false){
 
 function renderRanking(){
   const grouped=groupByNickname(allData);
-  const metricLabel={gyeong_rate:'매십경 달성률',myeon_rate:'매십면 달성률',un_rate:'매십운 달성률',apply:'총 지원수',write:'자소서 시간',lecture:'강의 시간',fa_rate:'FA 달성률'};
-  const metricUnit={gyeong_rate:'%',myeon_rate:'%',un_rate:'%',apply:'개',write:'분',lecture:'분',fa_rate:'%'};
-  const isWeekly=['gyeong_rate','myeon_rate','un_rate','fa_rate'].includes(currentRankMetric);
+  const metricLabel={gyeong_rate:'매십경 달성률',myeon_rate:'매십면 달성률',un_rate:'매십운 달성률',dok_rate:'매십독 달성률',apply:'총 지원수',write:'자소서 시간',lecture:'강의 시간',exam:'필기 시간',interview:'면접 시간',fa_rate:'FA 달성률'};
+  const metricUnit={gyeong_rate:'%',myeon_rate:'%',un_rate:'%',dok_rate:'%',apply:'개',write:'분',lecture:'분',exam:'분',interview:'분',fa_rate:'%'};
+  const isWeekly=['gyeong_rate','myeon_rate','un_rate','dok_rate','fa_rate'].includes(currentRankMetric);
 
   const members=Object.entries(grouped).map(([nick,rows])=>{
     const stats=calcStats(rows, isWeekly);

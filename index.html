@@ -423,13 +423,14 @@ async function renderSummary(){
   const wgD=weekData.filter(r=>r.gyeong>=10).length;
   const wmD=weekData.filter(r=>r.myeon>=10).length;
   const wdD=weekData.filter(r=>r.dok>=10).length;
+  const wuD=weekData.filter(r=>r.un>=10).length;
   const wfD=weekData.filter(r=>r.fa?.trim().toUpperCase()==='O').length;
   const todayDow=now.getDay();
   const passedWeekdays=(todayDow===0||todayDow===6)?5:todayDow;
   cr.style.display='block';
   document.getElementById('sub-days').textContent=`이번 주 (${monStr.slice(5)}~${friStr.slice(5)}) · ${wn}/${passedWeekdays}일 기록`;
   document.getElementById('rates-notice').innerHTML=`<div style="background:var(--surface2);border-radius:var(--r);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.8">📌 달성률은 <b>이번 주 월~금 평일 기준</b>으로 계산돼. 토·일 기록은 제외되고, 매주 월요일에 자동으로 리셋돼. 위 KPI 카드(총 지원·FA5050 등)는 전체 누적 기준이야.</div>`;
-  const rates=[{label:'매십경',v:wpct(wgD)},{label:'매십면',v:wpct(wmD)},{label:'매십독',v:wpct(wdD)},{label:'FA·R5050',v:wpct(wfD)}];
+  const rates=[{label:'매십경',v:wpct(wgD)},{label:'매십면',v:wpct(wmD)},{label:'매십독',v:wpct(wdD)},{label:'매십운',v:wpct(wuD)},{label:'FA·R5050',v:wpct(wfD)}];
   document.getElementById('rates-body').innerHTML=wn===0
     ?`<div class="empty-state" style="padding:20px 0"><div class="empty-desc">이번 주 평일 기록이 아직 없어!</div></div>`
     :rates.map(r=>{ const cls=r.v>=70?'':r.v>=40?'mid':'low'; return `<div class="rate-row"><span class="rate-label">${r.label}</span><div class="rate-track"><div class="rate-fill ${cls}" style="width:${r.v}%"></div></div><span class="rate-pct">${r.v}%</span></div>`; }).join('');
