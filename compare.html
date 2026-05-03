@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>함께 생존</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root {
   --bg:#F5F4F0;--surface:#FFFFFF;--surface2:#EEECE7;
@@ -88,7 +87,6 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
   <div class="tabs">
     <button class="tab active" data-tab="ranking">랭킹</button>
     <button class="tab" data-tab="compare">항목 비교</button>
-    <button class="tab" data-tab="chart">추이 비교</button>
   </div>
 
   <!-- 랭킹 탭 -->
@@ -141,27 +139,6 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
     </div>
   </div>
 
-  <!-- 추이 비교 탭 -->
-  <div id="tab-chart" style="display:none">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-icon ib">📈</div>
-        <div class="card-title">항목별 추이 비교</div>
-      </div>
-      <div class="metric-tabs" id="chart-metrics">
-        <button class="metric-tab active" data-metric="gyeong">매십경</button>
-        <button class="metric-tab" data-metric="myeon">매십면</button>
-        <button class="metric-tab" data-metric="un">매십운</button>
-        <button class="metric-tab" data-metric="write">자소서</button>
-        <button class="metric-tab" data-metric="lecture">강의</button>
-        <button class="metric-tab" data-metric="exam">필기</button>
-        <button class="metric-tab" data-metric="interview">면접대비</button>
-        <button class="metric-tab" data-metric="apply">지원</button>
-      </div>
-      <div class="chart-wrap" style="height:280px"><canvas id="compare-chart" role="img" aria-label="멤버별 항목 추이 비교 차트">멤버별 비교 차트</canvas></div>
-      <div class="legend-wrap" id="compare-legend"></div>
-    </div>
-  </div>
 
 </div>
 
@@ -171,7 +148,7 @@ const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 const MEMBER_COLORS=['#16A773','#3070D4','#C47C14','#D85A30','#7C5CCC','#C44484','#5C5C61','#D44B4A'];
 
 let allData=[], currentRankMetric='gyeong_rate', currentRankPeriod='week';
-let currentComparePeriod='week', currentChartMetric='gyeong', compareChartInst=null;
+let currentComparePeriod='week';
 
 async function fetchAll(){
   const res=await fetch(`${SUPABASE_URL}/rest/v1/saengjon_logs?order=date.asc`,{
@@ -342,54 +319,19 @@ function renderCompare(){
 
   document.getElementById('compare-table').innerHTML=thead+`<tbody>${tbody}</tbody>`;
 }
-
-function renderChartCompare(){
-  const grouped=groupByNickname(allData);
-  const nicks=Object.keys(grouped);
-  const allDates=[...new Set(allData.map(r=>r.date))].sort();
-  if(!nicks.length||!allDates.length) return;
-
-  const datasets=nicks.map((nick,i)=>{
-    const color=MEMBER_COLORS[i%MEMBER_COLORS.length];
-    const rowMap={};
-    grouped[nick].forEach(r=>rowMap[r.date]=r);
-    return {
-      label:nick,
-      data:allDates.map(d=>rowMap[d]?rowMap[d][currentChartMetric]||0:null),
-      borderColor:color, backgroundColor:color+'22',
-      tension:.35, fill:false, borderWidth:2, pointRadius:3, pointHoverRadius:5,
-      spanGaps:true
-    };
-  });
-
-  document.getElementById('compare-legend').innerHTML=nicks.map((n,i)=>
-    `<span class="legend-item"><span class="legend-dot" style="background:${MEMBER_COLORS[i%MEMBER_COLORS.length]}"></span>${n}</span>`
-  ).join('');
-
-  if(compareChartInst) compareChartInst.destroy();
-  compareChartInst=new Chart(document.getElementById('compare-chart'),{
-    type:'line',
-    data:{labels:allDates.map(d=>d.slice(5)),datasets},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{font:{size:11},maxRotation:45,autoSkip:true},grid:{color:'rgba(0,0,0,0.04)'}},
-        y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.04)'},beginAtZero:true}
       }
     }
   });
 }
 
 function switchTab(name){
-  ['ranking','compare','chart'].forEach(t=>{
+  ['ranking','compare'].forEach(t=>{
     document.getElementById('tab-'+t).style.display=t===name?'block':'none';
   });
   document.querySelectorAll('.tab').forEach(t=>{
     t.className='tab'+(t.dataset.tab===name?' active':'');
   });
   if(name==='compare') renderCompare();
-  if(name==='chart') renderChartCompare();
 }
 
 async function loadAndRender(){
@@ -429,13 +371,6 @@ document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEa
     renderRanking();
   });
 });
-document.getElementById('chart-metrics').querySelectorAll('.metric-tab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.getElementById('chart-metrics').querySelectorAll('.metric-tab').forEach(b=>b.className='metric-tab');
-    btn.className='metric-tab active';
-    currentChartMetric=btn.dataset.metric;
-    renderChartCompare();
-  });
 });
 
 loadAndRender();
