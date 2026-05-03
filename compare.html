@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>함께 생존</title>
 <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root {
   --bg:#F5F4F0;--surface:#FFFFFF;--surface2:#EEECE7;
@@ -125,6 +126,7 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
         <div class="card-icon ib">📊</div>
         <div class="card-title">항목 비교</div>
         <div class="card-sub" id="compare-period"></div>
+        <button class="refresh-btn" id="excel-btn">⬇ 엑셀</button>
       </div>
       <div class="sub-tabs" id="compare-sub-tabs">
         <button class="sub-tab active" data-period="week">이번 주</button>
@@ -367,6 +369,59 @@ document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEa
     renderRanking();
   });
 });
+
+function buildSheetData(period) {
+  const grouped = groupByNickname(allData);
+  const nicks = Object.keys(grouped);
+  const rows = [
+    {label:'기록 일수',key:'n',unit:'일'},
+    {label:'매십경 달성률',key:'gyeong_rate',unit:'%'},
+    {label:'매십면 달성률',key:'myeon_rate',unit:'%'},
+    {label:'매십독 달성률',key:'dok_rate',unit:'%'},
+    {label:'매십운 달성률',key:'un_rate',unit:'%'},
+    {label:'FA 달성률',key:'fa_rate',unit:'%'},
+    {label:'총 지원수',key:'apply',unit:'개'},
+    {label:'자소서 시간',key:'write',unit:'분'},
+    {label:'강의 시간',key:'lecture',unit:'분'},
+    {label:'필기 시간',key:'exam',unit:'분'},
+    {label:'면접 대비',key:'interview',unit:'분'},
+  ];
+  const statsMap = {};
+  nicks.forEach(nick => {
+    const filtered = filterByPeriod(grouped[nick], period);
+    statsMap[nick] = calcStats(filtered) || {};
+  });
+  // 헤더행
+  const header = ['항목', ...nicks, '전체 평균'];
+  const data = [header];
+  rows.forEach(row => {
+    const vals = nicks.map(n => statsMap[n][row.key] || 0);
+    const avg = nicks.length ? Math.round(vals.reduce((a,b)=>a+b,0)/nicks.length) : 0;
+    data.push([row.label, ...vals.map(v => v + row.unit), avg + row.unit]);
+  });
+  return data;
+}
+
+function exportExcel() {
+  const wb = XLSX.utils.book_new();
+  const periods = [
+    {key:'week', label:'이번 주'},
+    {key:'month', label:'이번 달'},
+    {key:'all',  label:'누적'},
+  ];
+  periods.forEach(p => {
+    const data = buildSheetData(p.key);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    // 열 너비 설정
+    ws['!cols'] = [{wch:16}, ...Object.keys(groupByNickname(allData)).map(()=>({wch:12})), {wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws, p.label);
+  });
+  const today = new Date();
+  const fname = `생존일지_항목비교_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb, fname);
+}
+
+document.getElementById('excel-btn').addEventListener('click', exportExcel);
 
 loadAndRender();
 </script>
