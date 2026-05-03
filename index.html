@@ -517,15 +517,12 @@ async function renderTrend(){
   const dataMap = {};
   data.forEach(r => dataMap[r.date] = r);
 
-  // 이번 주 7일
-  const weekDates = getThisWeekDates();
-  const recent = weekDates.map(d => dataMap[d] || null);
+  // 최근 7일
+  const recent = data.slice(-7);
+  const weekDates = recent.map(r => r.date);
 
-  // x축 레이블: "월 5/03" 형태
-  const labels = weekDates.map((d, i) => {
-    const mmdd = d.slice(5).replace('-','/');
-    return `${DOW_KO[i]} ${mmdd}`;
-  });
+  // x축 레이블: "5/03" 형태
+  const labels = weekDates.map(d => d.slice(5).replace('-','/'));
 
   // 저번 주 같은 요일 총합
   const lastWeekTotals = weekDates.map(d => {
