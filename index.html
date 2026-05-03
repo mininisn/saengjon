@@ -547,15 +547,14 @@ async function renderTrend(){
     lecture:   '#E8A020', // 노란
   };
 
-  // 누적 막대 datasets (흰 테두리 추가)
+  // 누적 막대 datasets
   const stackedDatasets = METRICS.map(m => ({
     label: m.label,
     data: recent.map(r => r ? (r[m.k]||0) : 0),
     backgroundColor: COLORS_STRONG[m.k],
-    borderColor: '#ffffff',
-    borderWidth: 1.5,
+    borderColor: COLORS_STRONG[m.k],
+    borderWidth: 0,
     stack: 'current',
-    borderSkipped: false,
   }));
 
   // 저번 주 회색 막대
@@ -631,7 +630,7 @@ async function renderTrend(){
       scales: {
         x: {
           stacked: true,
-          ticks: { font: { size: 11 }, maxRotation: 0 },
+          ticks: { font: { size: 11 }, maxRotation: 0, autoSkip: false },
           grid: { color: 'rgba(0,0,0,0.04)' }
         },
         y: {
