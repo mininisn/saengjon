@@ -347,7 +347,7 @@ async function saveToday(){
     }
     msg.textContent='저장 완료. 오늘도 생존!'; msg.style.color='var(--green)';
   } catch(e) {
-    msg.textContent='저장 실패. 닉네임 확인해봐!'; msg.style.color='var(--red)';
+    msg.textContent='저장 실패: ' + e.message; msg.style.color='var(--red)';
   }
   btn.disabled=false;
   setTimeout(()=>{ msg.textContent=''; }, 3500);
