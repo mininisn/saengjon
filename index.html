@@ -488,6 +488,23 @@ function getLastWeekDate(dateStr){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
 
+// 이번 주 월~일 날짜 배열 생성 (기록 없는 날은 null)
+function getThisWeekDates(){
+  const now = new Date(); now.setHours(0,0,0,0);
+  const dow = now.getDay();
+  const diffToMon = dow===0 ? -6 : 1-dow;
+  const mon = new Date(now); mon.setDate(now.getDate()+diffToMon);
+  const dates = [];
+  for(let i=0;i<7;i++){
+    const d = new Date(mon); d.setDate(mon.getDate()+i);
+    const s = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    dates.push(s);
+  }
+  return dates;
+}
+
+const DOW_KO = ['월','화','수','목','금','토','일'];
+
 async function renderTrend(){
   const data = await loadData();
   if(!data.length){
@@ -500,35 +517,53 @@ async function renderTrend(){
   const dataMap = {};
   data.forEach(r => dataMap[r.date] = r);
 
-  // 최근 14일치만 표시 (가독성)
-  const recent = data.slice(-14);
-  const labels = recent.map(r => r.date.slice(5));
+  // 이번 주 7일
+  const weekDates = getThisWeekDates();
+  const recent = weekDates.map(d => dataMap[d] || null);
 
-  // 이번 주 각 날짜에 대해 저번 주 같은 요일 총합
-  const lastWeekTotals = recent.map(r => {
-    const lwDate = getLastWeekDate(r.date);
+  // x축 레이블: "월 5/03" 형태
+  const labels = weekDates.map((d, i) => {
+    const mmdd = d.slice(5).replace('-','/');
+    return `${DOW_KO[i]} ${mmdd}`;
+  });
+
+  // 저번 주 같은 요일 총합
+  const lastWeekTotals = weekDates.map(d => {
+    const lwDate = getLastWeekDate(d);
     const lwRow = dataMap[lwDate];
-    if(!lwRow) return null;
+    if(!lwRow) return 0;
     return METRICS.reduce((a, m) => a + (lwRow[m.k]||0), 0);
   });
 
-  // 누적 막대 datasets
+  // 색상: 명도 차이를 극단적으로 + 흰 테두리로 세그먼트 구분
+  const COLORS_STRONG = {
+    gyeong:    '#FF4444', // 붉은 - 가장 밝음
+    myeon:     '#CC1111', // 붉은 - 중간
+    dok:       '#FF8888', // 붉은 - 연분홍
+    un:        '#882200', // 붉은 - 가장 진함
+    write:     '#4488FF', // 파란 - 밝음
+    interview: '#88BBFF', // 파란 - 연함
+    exam:      '#0033AA', // 파란 - 진함
+    lecture:   '#E8A020', // 노란
+  };
+
+  // 누적 막대 datasets (흰 테두리 추가)
   const stackedDatasets = METRICS.map(m => ({
     label: m.label,
-    data: recent.map(r => r[m.k]||0),
-    backgroundColor: m.color,
-    borderColor: m.color,
-    borderWidth: 0,
+    data: recent.map(r => r ? (r[m.k]||0) : 0),
+    backgroundColor: COLORS_STRONG[m.k],
+    borderColor: '#ffffff',
+    borderWidth: 1.5,
     stack: 'current',
-    borderRadius: 2,
+    borderSkipped: false,
   }));
 
-  // 저번 주 회색 막대 (별도 stack)
+  // 저번 주 회색 막대
   stackedDatasets.push({
     label: '저번 주 (같은 요일)',
-    data: lastWeekTotals.map(v => v === null ? 0 : v),
-    backgroundColor: 'rgba(160,160,168,0.28)',
-    borderColor: 'rgba(160,160,168,0.5)',
+    data: lastWeekTotals,
+    backgroundColor: 'rgba(150,150,158,0.22)',
+    borderColor: 'rgba(150,150,158,0.55)',
     borderWidth: 1,
     stack: 'last',
     borderRadius: 2,
@@ -544,14 +579,13 @@ async function renderTrend(){
       const xScale = scales.x;
       const yScale = scales.y;
       ctx.save();
-      ctx.font = '13px serif';
+      ctx.font = '12px serif';
       ctx.textAlign = 'center';
       recent.forEach((r, i) => {
-        if(r.fa?.trim().toUpperCase() === 'O'){
+        if(r && r.fa?.trim().toUpperCase() === 'O'){
           const x = xScale.getPixelForValue(i);
-          // 해당 날짜 전체 합산
           const total = METRICS.reduce((a,m) => a+(r[m.k]||0), 0);
-          const y = yScale.getPixelForValue(total) - 8;
+          const y = yScale.getPixelForValue(total/60) - 8;
           ctx.fillText('⭐', x, y);
         }
       });
@@ -568,33 +602,68 @@ async function renderTrend(){
       plugins: {
         legend: { display: false },
         tooltip: {
+          mode: 'index',
+          intersect: false,
           callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}분`
+            title: (items) => labels[items[0].dataIndex],
+            label: ctx => {
+              if(ctx.dataset.stack === 'last') {
+                const min = ctx.parsed.y * 60;
+                const h = Math.floor(min/60), m = Math.round(min%60);
+                return ` 저번 주: ${h>0?h+'시간 ':''}${m}분`;
+              }
+              const min = ctx.parsed.y * 60;
+              if(min === 0) return null;
+              const h = Math.floor(min/60), m = Math.round(min%60);
+              return ` ${ctx.dataset.label}: ${h>0?h+'시간 ':''}${m}분`;
+            },
+            footer: (items) => {
+              const total = items
+                .filter(i => i.dataset.stack === 'current')
+                .reduce((a,i) => a + i.parsed.y, 0);
+              const min = total * 60;
+              const h = Math.floor(min/60), m = Math.round(min%60);
+              return `합계: ${h>0?h+'시간 ':''}${m}분`;
+            }
           }
         }
       },
       scales: {
         x: {
           stacked: true,
-          ticks: { font: { size: 11 }, maxRotation: 45, autoSkip: false },
+          ticks: { font: { size: 11 }, maxRotation: 0 },
           grid: { color: 'rgba(0,0,0,0.04)' }
         },
         y: {
           stacked: true,
-          ticks: { font: { size: 11 } },
+          ticks: {
+            font: { size: 11 },
+            callback: v => v === 0 ? '0' : (Number.isInteger(v) ? v+'h' : '')
+          },
           grid: { color: 'rgba(0,0,0,0.04)' },
           beginAtZero: true,
-          title: { display: true, text: '분', font: { size: 11 } }
+          title: { display: true, text: '시간', font: { size: 11 } },
+          // 분→시간 변환: 데이터를 /60 해서 넣을 것
         }
       }
     },
     plugins: [faStarPlugin]
   });
 
+  // 데이터를 시간 단위로 변환 (분/60)
+  chartInst.data.datasets.forEach((ds, di) => {
+    if(di < METRICS.length) {
+      ds.data = recent.map(r => r ? +((r[METRICS[di].k]||0)/60).toFixed(2) : 0);
+    } else {
+      ds.data = lastWeekTotals.map(v => +(v/60).toFixed(2));
+    }
+  });
+  chartInst.update();
+
   // 범례
   document.getElementById('trend-legend').innerHTML =
-    METRICS.map(m => `<span class="legend-item"><span class="legend-dot" style="background:${m.color}"></span>${m.label}</span>`).join('') +
-    `<span class="legend-item"><span class="legend-dot" style="background:rgba(160,160,168,0.5);border:1px solid rgba(160,160,168,0.7)"></span>저번 주</span>`;
+    METRICS.map(m => `<span class="legend-item"><span class="legend-dot" style="background:${COLORS_STRONG[m.k]};border:1.5px solid #fff;outline:1px solid ${COLORS_STRONG[m.k]}"></span>${m.label}</span>`).join('') +
+    `<span class="legend-item"><span class="legend-dot" style="background:rgba(150,150,158,0.4);border:1px solid rgba(150,150,158,0.7)"></span>저번 주</span>`;
 }
 
 function getWeekKey(dateStr){ const d=new Date(dateStr); d.setHours(0,0,0,0); const dow=d.getDay(); const diffToMon=dow===0?-6:1-dow; const mon=new Date(d); mon.setDate(d.getDate()+diffToMon); return mon.toISOString().slice(0,10); }
