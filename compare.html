@@ -129,9 +129,13 @@ body{font-family:'Pretendard',-apple-system,sans-serif;background:var(--bg);colo
         <button class="refresh-btn" id="excel-btn">⬇ 엑셀</button>
       </div>
       <div class="sub-tabs" id="compare-sub-tabs">
-        <button class="sub-tab active" data-period="week">이번 주</button>
-        <button class="sub-tab" data-period="month">이번 달</button>
+        <button class="sub-tab active" data-period="week">주별</button>
+        <button class="sub-tab" data-period="month">월별</button>
         <button class="sub-tab" data-period="all">누적</button>
+      </div>
+      <div id="compare-dropdown-wrap" style="margin-bottom:14px">
+        <select id="compare-week-select" style="font-family:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;width:100%;cursor:pointer;"></select>
+        <select id="compare-month-select" style="display:none;font-family:inherit;font-size:13px;font-weight:600;padding:7px 12px;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);outline:none;width:100%;cursor:pointer;"></select>
       </div>
       <div style="overflow-x:auto;">
         <table class="compare-table" id="compare-table">
@@ -150,7 +154,7 @@ const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 const MEMBER_COLORS=['#16A773','#3070D4','#C47C14','#D85A30','#7C5CCC','#C44484','#5C5C61','#D44B4A'];
 
 let allData=[], currentRankMetric='gyeong_rate', currentRankPeriod='week';
-let currentComparePeriod='week';
+let currentComparePeriod='week', compareWeekOffset=0, compareMonthOffset=0;
 
 async function fetchAll(){
   const res=await fetch(`${SUPABASE_URL}/rest/v1/saengjon_logs?order=date.asc`,{
@@ -159,29 +163,55 @@ async function fetchAll(){
   return res.json();
 }
 
-function getWeekBounds(){
+function getWeekBounds(offset=0){
   const now=new Date(); const dow=now.getDay();
   const diffToMon=dow===0?-6:1-dow;
-  const mon=new Date(now); mon.setHours(0,0,0,0); mon.setDate(now.getDate()+diffToMon);
+  const mon=new Date(now); mon.setHours(0,0,0,0); mon.setDate(now.getDate()+diffToMon-(offset*7));
   const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   const toDS=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   return {monStr:toDS(mon), sunStr:toDS(sun)};
 }
 
-function getMonthBounds(){
-  const now=new Date(); const y=now.getFullYear(), m=now.getMonth();
+function getMonthBounds(offset=0){
+  const now=new Date(); let y=now.getFullYear(), m=now.getMonth()-offset;
+  while(m<0){m+=12;y--;}
   const first=new Date(y,m,1), last=new Date(y,m+1,0);
   const toDS=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   return {firstStr:toDS(first), lastStr:toDS(last)};
 }
 
+function buildWeekOptions(){
+  const sel=document.getElementById('compare-week-select');
+  sel.innerHTML='';
+  for(let i=0;i<8;i++){
+    const {monStr,sunStr}=getWeekBounds(i);
+    const label=i===0?`이번 주 (${monStr.slice(5)}~${sunStr.slice(5)})`:i===1?`저번 주 (${monStr.slice(5)}~${sunStr.slice(5)})`:  `${i}주 전 (${monStr.slice(5)}~${sunStr.slice(5)})`;
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=label;
+    sel.appendChild(opt);
+  }
+}
+
+function buildMonthOptions(){
+  const sel=document.getElementById('compare-month-select');
+  sel.innerHTML='';
+  for(let i=0;i<6;i++){
+    const now=new Date(); let y=now.getFullYear(), m=now.getMonth()-i;
+    while(m<0){m+=12;y--;}
+    const label=i===0?`이번 달 (${y}.${String(m+1).padStart(2,'0')})`:  `${y}.${String(m+1).padStart(2,'0')}`;
+    const opt=document.createElement('option');
+    opt.value=i; opt.textContent=label;
+    sel.appendChild(opt);
+  }
+}
+
 function filterByPeriod(rows, period){
   if(period==='week'){
-    const {monStr,sunStr}=getWeekBounds();
+    const {monStr,sunStr}=getWeekBounds(compareWeekOffset);
     return rows.filter(r=>r.date>=monStr&&r.date<=sunStr);
   }
   if(period==='month'){
-    const {firstStr,lastStr}=getMonthBounds();
+    const {firstStr,lastStr}=getMonthBounds(compareMonthOffset);
     return rows.filter(r=>r.date>=firstStr&&r.date<=lastStr);
   }
   return rows;
@@ -189,11 +219,13 @@ function filterByPeriod(rows, period){
 
 function getPeriodLabel(period){
   if(period==='week'){
-    const {monStr,sunStr}=getWeekBounds();
+    const {monStr,sunStr}=getWeekBounds(compareWeekOffset);
     return `${monStr.slice(5)}~${sunStr.slice(5)}`;
   }
   if(period==='month'){
-    return `${new Date().getMonth()+1}월`;
+    const now=new Date(); let y=now.getFullYear(), m=now.getMonth()-compareMonthOffset;
+    while(m<0){m+=12;y--;}
+    return `${y}.${String(m+1).padStart(2,'0')}`;
   }
   return '전체 누적';
 }
@@ -358,8 +390,18 @@ document.getElementById('compare-sub-tabs').querySelectorAll('.sub-tab').forEach
     document.getElementById('compare-sub-tabs').querySelectorAll('.sub-tab').forEach(b=>b.className='sub-tab');
     btn.className='sub-tab active';
     currentComparePeriod=btn.dataset.period;
+    document.getElementById('compare-week-select').style.display=btn.dataset.period==='week'?'block':'none';
+    document.getElementById('compare-month-select').style.display=btn.dataset.period==='month'?'block':'none';
     renderCompare();
   });
+});
+document.getElementById('compare-week-select').addEventListener('change', e=>{
+  compareWeekOffset=+e.target.value;
+  renderCompare();
+});
+document.getElementById('compare-month-select').addEventListener('change', e=>{
+  compareMonthOffset=+e.target.value;
+  renderCompare();
 });
 document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEach(btn=>{
   btn.addEventListener('click',()=>{
@@ -370,88 +412,83 @@ document.getElementById('ranking-metrics').querySelectorAll('.metric-tab').forEa
   });
 });
 
-function buildSheetData(period) {
+const ROW_DEFS = [
+  {label:'기록 일수',key:'n',unit:'일'},
+  {label:'매십경 달성률',key:'gyeong_rate',unit:'%'},
+  {label:'매십면 달성률',key:'myeon_rate',unit:'%'},
+  {label:'매십독 달성률',key:'dok_rate',unit:'%'},
+  {label:'매십운 달성률',key:'un_rate',unit:'%'},
+  {label:'FA 달성률',key:'fa_rate',unit:'%'},
+  {label:'총 지원수',key:'apply',unit:'개'},
+  {label:'자소서 시간',key:'write',unit:'분'},
+  {label:'강의 시간',key:'lecture',unit:'분'},
+  {label:'필기 시간',key:'exam',unit:'분'},
+  {label:'면접 대비',key:'interview',unit:'분'},
+];
+
+function buildSheetData(filteredRows) {
   const grouped = groupByNickname(allData);
   const nicks = Object.keys(grouped);
-  const rowDefs = [
-    {label:'기록 일수',key:'n',unit:'일'},
-    {label:'매십경 달성률',key:'gyeong_rate',unit:'%'},
-    {label:'매십면 달성률',key:'myeon_rate',unit:'%'},
-    {label:'매십독 달성률',key:'dok_rate',unit:'%'},
-    {label:'매십운 달성률',key:'un_rate',unit:'%'},
-    {label:'FA 달성률',key:'fa_rate',unit:'%'},
-    {label:'총 지원수',key:'apply',unit:'개'},
-    {label:'자소서 시간',key:'write',unit:'분'},
-    {label:'강의 시간',key:'lecture',unit:'분'},
-    {label:'필기 시간',key:'exam',unit:'분'},
-    {label:'면접 대비',key:'interview',unit:'분'},
-  ];
   const statsMap = {};
   nicks.forEach(nick => {
-    const filtered = filterByPeriod(grouped[nick], period);
-    statsMap[nick] = calcStats(filtered) || {};
+    const rows = (grouped[nick] || []).filter(r => filteredRows.includes(r));
+    statsMap[nick] = calcStats(rows) || {};
   });
-
-  // 전치: 행=멤버, 열=항목
-  // 헤더행: 항목명들
-  const header = ['닉네임', ...rowDefs.map(r => r.label)];
+  const header = ['닉네임', ...ROW_DEFS.map(r => r.label)];
   const data = [header];
-
-  // 각 멤버 행
   nicks.forEach(nick => {
-    const row = [nick, ...rowDefs.map(r => {
-      const v = statsMap[nick][r.key] || 0;
-      return v + r.unit;
-    })];
-    data.push(row);
+    data.push([nick, ...ROW_DEFS.map(r => (statsMap[nick][r.key] || 0) + r.unit)]);
   });
-
-  // 전체 평균 행
-  const avgRow = ['전체 평균', ...rowDefs.map(r => {
+  const avgRow = ['전체 평균', ...ROW_DEFS.map(r => {
     const vals = nicks.map(n => statsMap[n][r.key] || 0);
-    const avg = nicks.length ? Math.round(vals.reduce((a,b)=>a+b,0)/nicks.length) : 0;
-    return avg + r.unit;
+    return (nicks.length ? Math.round(vals.reduce((a,b)=>a+b,0)/nicks.length) : 0) + r.unit;
   })];
   data.push(avgRow);
-
   return data;
+}
+
+function makeWs(data) {
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const strWidth = str => { let w=0; for(const ch of String(str)) w+=ch.charCodeAt(0)>127?2:1; return w; };
+  ws['!cols'] = data[0].map((_,ci) => ({wch: Math.max(...data.map(row => strWidth(row[ci]??''))) + 2}));
+  ws['!freeze'] = {xSplit:0, ySplit:1, topLeftCell:'A2', activePane:'bottomLeft'};
+  return ws;
 }
 
 function exportExcel() {
   const wb = XLSX.utils.book_new();
-  const periods = [
-    {key:'week', label:'이번 주'},
-    {key:'month', label:'이번 달'},
-    {key:'all',  label:'누적'},
-  ];
-  periods.forEach(p => {
-    const data = buildSheetData(p.key);
-    const ws = XLSX.utils.aoa_to_sheet(data);
 
-    // 열 너비 자동 조정 (한글 2배 보정)
-    const strWidth = str => {
-      let w = 0;
-      for(const ch of String(str)) w += ch.charCodeAt(0) > 127 ? 2 : 1;
-      return w;
-    };
-    const colWidths = data[0].map((_, ci) => ({
-      wch: Math.max(...data.map(row => strWidth(row[ci] ?? ''))) + 2
-    }));
-    ws['!cols'] = colWidths;
-
-    // 첫 행 고정 (헤더)
-    ws['!freeze'] = {xSplit:0, ySplit:1, topLeftCell:'A2', activePane:'bottomLeft'};
-
-    XLSX.utils.book_append_sheet(wb, ws, p.label);
-  });
+  if(currentComparePeriod === 'week') {
+    for(let i=0; i<8; i++) {
+      const {monStr, sunStr} = getWeekBounds(i);
+      const filtered = allData.filter(r => r.date>=monStr && r.date<=sunStr);
+      const label = i===0 ? '이번 주' : i===1 ? '저번 주' : `${i}주 전`;
+      const sheetLabel = `${label}(${monStr.slice(5)}~${sunStr.slice(5)})`;
+      XLSX.utils.book_append_sheet(wb, makeWs(buildSheetData(filtered)), sheetLabel);
+    }
+  } else if(currentComparePeriod === 'month') {
+    for(let i=0; i<6; i++) {
+      const {firstStr, lastStr} = getMonthBounds(i);
+      const filtered = allData.filter(r => r.date>=firstStr && r.date<=lastStr);
+      const now = new Date(); let y=now.getFullYear(), m=now.getMonth()-i;
+      while(m<0){m+=12;y--;}
+      const label = i===0 ? `이번 달 (${y}.${String(m+1).padStart(2,'0')})` : `${y}.${String(m+1).padStart(2,'0')}`;
+      XLSX.utils.book_append_sheet(wb, makeWs(buildSheetData(filtered)), label);
+    }
+  } else {
+    XLSX.utils.book_append_sheet(wb, makeWs(buildSheetData(allData)), '누적');
+  }
 
   const today = new Date();
-  const fname = `생존일지_항목비교_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
+  const periodLabel = currentComparePeriod==='week'?'주별':currentComparePeriod==='month'?'월별':'누적';
+  const fname = `생존일지_${periodLabel}_${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}.xlsx`;
   XLSX.writeFile(wb, fname);
 }
 
 document.getElementById('excel-btn').addEventListener('click', exportExcel);
 
+buildWeekOptions();
+buildMonthOptions();
 loadAndRender();
 </script>
 </body>
